@@ -2,81 +2,340 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>LD2452 Radar // Spatial Human Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dual mmWave Radar Station // LD2452 (24G) + LD6003D (60G) Fusion</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
+    :root {
+      --bg-base: #06080a;
+      --bg-panel: rgba(10, 14, 18, 0.85);
+      --border-panel: rgba(61, 255, 122, 0.22);
+      --col-t1: #3dff7a;
+      --col-t2: #ffc23d;
+      --col-t3: #3dd9ff;
+      --col-alert: #ff716c;
+    }
+    * { box-sizing: border-box; }
     html, body {
       margin: 0;
+      padding: 0;
       height: 100%;
-      background: #020c06;
-      overflow: hidden;
-      font-family: Consolas, monospace;
-      color: #3dff7a;
+      background: var(--bg-base);
+      overflow-x: hidden;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #e2e8f0;
+      line-height: 1.4;
     }
-    canvas {
-      display: block;
-    }
-    #hud {
+    canvas { display: block; }
+    .mono { font-family: 'JetBrains Mono', Consolas, monospace; }
+
+    /* Top Station HUD */
+    #top-hud {
       position: fixed;
-      top: 12px;
-      left: 14px;
-      font-size: 13px;
-      line-height: 1.6;
-      text-shadow: 0 0 8px #3dff7a;
+      top: 10px;
+      left: 12px;
+      right: 12px;
+      z-index: 100;
+      background: rgba(6, 10, 14, 0.88);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-panel);
+      border-radius: 14px;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
     }
-    #hud b {
-      font-size: 16px;
-      letter-spacing: 3px;
+    .hud-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 1px;
+      color: #FFFFFF;
     }
-    button {
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--col-t1);
+      box-shadow: 0 0 8px var(--col-t1);
+      animation: pulse 1.6s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+    }
+    .badge-pill {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.05);
+      color: #cbd5e1;
+    }
+    .btn {
       background: #04200e;
       color: #3dff7a;
       border: 1px solid #3dff7a;
       padding: 6px 12px;
-      margin: 6px 6px 0 0;
-      font: inherit;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
       cursor: pointer;
-      box-shadow: 0 0 8px #3dff7a55;
-      border-radius: 4px;
-      transition: background 0.2s;
+      box-shadow: 0 0 10px rgba(61, 255, 122, 0.25);
+      border-radius: 6px;
+      transition: all 0.2s;
     }
-    button:hover {
-      background: #0a3a1c;
+    .btn:hover { background: #0a3a1c; transform: translateY(-1px); }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.06);
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      box-shadow: none;
     }
-    #list {
+    .btn-secondary:hover { background: rgba(255, 255, 255, 0.12); }
+
+    /* Side Telemetry Dossier Panel */
+    #dossier-panel {
       position: fixed;
-      top: 12px;
-      right: 14px;
-      font-size: 13px;
-      line-height: 1.7;
-      text-align: right;
-      text-shadow: 0 0 8px currentColor;
+      top: 72px;
+      right: 12px;
+      bottom: 12px;
+      width: 380px;
+      z-index: 90;
+      background: var(--bg-panel);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--border-panel);
+      border-radius: 14px;
+      padding: 14px;
+      overflow-y: auto;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .target-card {
+      background: rgba(8, 12, 16, 0.75);
+      border-radius: 10px;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      transition: all 0.2s;
+    }
+    .card-t1 { border-left: 4px solid var(--col-t1); }
+    .card-t2 { border-left: 4px solid var(--col-t2); }
+    .card-t3 { border-left: 4px solid var(--col-t3); }
+
+    .vitals-box {
+      background: rgba(4, 8, 6, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 8px;
+      margin-top: 8px;
+    }
+
+    /* Diagnostics ticker at bottom left */
+    #bottom-ticker {
+      position: fixed;
+      bottom: 12px;
+      left: 14px;
+      z-index: 90;
+      font-size: 12px;
+      background: rgba(6, 10, 14, 0.85);
+      backdrop-filter: blur(14px);
+      border: 1px solid var(--border-panel);
+      padding: 8px 14px;
+      border-radius: 8px;
+      color: #3dff7a;
+      max-width: calc(100% - 420px);
+    }
+
+    @media (max-width: 900px) {
+      #dossier-panel {
+        position: static;
+        width: calc(100% - 24px);
+        margin: 12px auto;
+      }
+      #bottom-ticker {
+        position: static;
+        max-width: calc(100% - 24px);
+        margin: 12px auto;
+      }
     }
   </style>
 </head>
 <body>
-  <canvas id="c"></canvas>
-  <div id="hud">
-    <b>LD2452 // RADAR</b><br>
-    STATUS: <span id="st">OFFLINE</span><br>
-    CONTACTS: <span id="n">0</span><br>
-    <span id="dbg">WAITING FOR ESP32 DATA...</span><br>
-    <button id="bc">CONNECT RADAR</button>
-    <button id="bd">DEMO</button>
+
+  <!-- Top Tactical Command HUD -->
+  <div id="top-hud">
+    <div class="hud-title">
+      <span class="pulse-dot"></span>
+      <span>RADAR FUSION OS // DUAL-BAND STATION</span>
+      <span class="badge-pill" style="color:#3dff7a; border-color:#3dff7a;">24G LD2452 [ACTIVE]</span>
+      <span class="badge-pill" style="color:#3dd9ff; border-color:#3dd9ff;">60G LD6003D [FMCW VITALS]</span>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+      <button id="bc" class="btn">⚡ CONNECT RADAR (115200)</button>
+      <button id="bd" class="btn btn-secondary">▶ RUN DEMO</button>
+
+      <select id="sc-select" class="mono" style="background:#091016; color:#e2e8f0; border:1px solid rgba(255,255,255,0.2); padding:5px 8px; border-radius:6px; font-size:11px;">
+        <option value="ambient">Office Ambient (3 Targets)</option>
+        <option value="crossing">Path Crossing (Occlusion)</option>
+        <option value="still">Anti-PIR Still Presence</option>
+        <option value="breach">Perimeter Fast Approach</option>
+      </select>
+    </div>
   </div>
-  <div id="list"></div>
+
+  <!-- Radar Canvas Background -->
+  <canvas id="c"></canvas>
+
+  <!-- Side Telemetry Dossier Panel -->
+  <div id="dossier-panel">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span class="mono" style="font-size: 11px; color: #94a3b8; letter-spacing: 1px;">TARGET DOSSIER (MAX 3)</span>
+      <span id="st-badge" class="badge-pill" style="color: #ff716c;">OFFLINE</span>
+    </div>
+
+    <!-- TARGET 1 CARD -->
+    <div id="card-0" class="target-card card-t1">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="mono" style="font-weight:700; color:var(--col-t1); font-size:12px;">TARGET 01</span>
+        <span id="t0-pill" class="badge-pill" style="color:var(--col-t1);">STANDBY</span>
+      </div>
+      <div class="mono" style="font-size:11px; margin-top:6px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center;">
+        <div style="background:rgba(255,255,255,0.03); padding:4px;">DIST: <span id="t0-d" style="color:#FFF;">--</span></div>
+        <div style="background:rgba(255,255,255,0.03); padding:4px;">ANG: <span id="t0-a" style="color:#FFF;">--</span></div>
+        <div style="background:rgba(255,255,255,0.03); padding:4px;">VEL: <span id="t0-v" style="color:#FFF;">--</span></div>
+      </div>
+      <div class="mono" style="font-size:10px; color:#94a3b8; margin-top:6px;">
+        XYZ: <span id="t0-xyz" style="color:#FFF;">X: -- | Y: -- | Z: --</span>
+      </div>
+      <div class="vitals-box">
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:#3dff7a;" class="mono">
+          <span>60 GHz SUB-MM VITALS</span>
+          <span id="t0-excur">Chest: ±0.75 mm</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:4px;">
+          <div style="background:rgba(0,0,0,0.4); padding:4px 6px; border-radius:4px;">
+            <div class="mono" style="font-size:9px; color:#ff716c; display:flex; justify-content:space-between;">
+              <span>💓 HR</span><span id="t0-hr">74 BPM</span>
+            </div>
+            <canvas id="c-ecg-0" width="100" height="20" style="width:100%; height:20px; margin-top:2px;"></canvas>
+          </div>
+          <div style="background:rgba(0,0,0,0.4); padding:4px 6px; border-radius:4px;">
+            <div class="mono" style="font-size:9px; color:#3dd9ff; display:flex; justify-content:space-between;">
+              <span>🫁 RESP</span><span id="t0-rr">16.2 RPM</span>
+            </div>
+            <canvas id="c-rr-0" width="100" height="20" style="width:100%; height:20px; margin-top:2px;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TARGET 2 CARD -->
+    <div id="card-1" class="target-card card-t2">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="mono" style="font-weight:700; color:var(--col-t2); font-size:12px;">TARGET 02</span>
+        <span id="t1-pill" class="badge-pill" style="color:var(--col-t2);">STANDBY</span>
+      </div>
+      <div class="mono" style="font-size:11px; margin-top:6px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center;">
+        <div style="background:rgba(255,255,255,0.03); padding:4px;">DIST: <span id="t1-d" style="color:#FFF;">--</span></div>
+        <div style="background:rgba(255,255,255,0.03); padding:4px;">ANG: <span id="t1-a" style="color:#FFF;">--</span></div>
+        <div style="background:rgba(255,255,255,0.03); padding:4px;">VEL: <span id="t1-v" style="color:#FFF;">--</span></div>
+      </div>
+      <div class="mono" style="font-size:10px; color:#94a3b8; margin-top:6px;">
+        XYZ: <span id="t1-xyz" style="color:#FFF;">X: -- | Y: -- | Z: --</span>
+      </div>
+      <div class="vitals-box">
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:#ffc23d;" class="mono">
+          <span>60 GHz SUB-MM VITALS</span>
+          <span id="t1-excur">Chest: ±0.85 mm</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:4px;">
+          <div style="background:rgba(0,0,0,0.4); padding:4px 6px; border-radius:4px;">
+            <div class="mono" style="font-size:9px; color:#ff716c; display:flex; justify-content:space-between;">
+              <span>💓 HR</span><span id="t1-hr">80 BPM</span>
+            </div>
+            <canvas id="c-ecg-1" width="100" height="20" style="width:100%; height:20px; margin-top:2px;"></canvas>
+          </div>
+          <div style="background:rgba(0,0,0,0.4); padding:4px 6px; border-radius:4px;">
+            <div class="mono" style="font-size:9px; color:#3dd9ff; display:flex; justify-content:space-between;">
+              <span>🫁 RESP</span><span id="t1-rr">18.0 RPM</span>
+            </div>
+            <canvas id="c-rr-1" width="100" height="20" style="width:100%; height:20px; margin-top:2px;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TARGET 3 CARD -->
+    <div id="card-2" class="target-card card-t3">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span class="mono" style="font-weight:700; color:var(--col-t3); font-size:12px;">TARGET 03</span>
+        <span id="t2-pill" class="badge-pill" style="color:var(--col-t3);">STANDBY</span>
+      </div>
+      <div class="mono" style="font-size:11px; margin-top:6px; display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center;">
+        <div style="background:rgba(255,255,255,0.03); padding:4px;">DIST: <span id="t2-d" style="color:#FFF;">--</span></div>
+        <div style="background:rgba(255,255,255,0.03); padding:4px;">ANG: <span id="t2-a" style="color:#FFF;">--</span></div>
+        <div style="background:rgba(255,255,255,0.03); padding:4px;">VEL: <span id="t2-v" style="color:#FFF;">--</span></div>
+      </div>
+      <div class="mono" style="font-size:10px; color:#94a3b8; margin-top:6px;">
+        XYZ: <span id="t2-xyz" style="color:#FFF;">X: -- | Y: -- | Z: --</span>
+      </div>
+      <div class="vitals-box">
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:#3dd9ff;" class="mono">
+          <span>60 GHz SUB-MM VITALS</span>
+          <span id="t2-excur">Chest: ±0.68 mm</span>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:4px;">
+          <div style="background:rgba(0,0,0,0.4); padding:4px 6px; border-radius:4px;">
+            <div class="mono" style="font-size:9px; color:#ff716c; display:flex; justify-content:space-between;">
+              <span>💓 HR</span><span id="t2-hr">68 BPM</span>
+            </div>
+            <canvas id="c-ecg-2" width="100" height="20" style="width:100%; height:20px; margin-top:2px;"></canvas>
+          </div>
+          <div style="background:rgba(0,0,0,0.4); padding:4px 6px; border-radius:4px;">
+            <div class="mono" style="font-size:9px; color:#3dd9ff; display:flex; justify-content:space-between;">
+              <span>🫁 RESP</span><span id="t2-rr">14.5 RPM</span>
+            </div>
+            <canvas id="c-rr-2" width="100" height="20" style="width:100%; height:20px; margin-top:2px;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Diagnostics Ticker -->
+  <div id="bottom-ticker" class="mono">
+    STATUS: <span id="dbg">WAITING FOR ESP32 DATA...</span> | FRAMES: <span id="f-cnt">0</span> | BYTES: <span id="b-cnt">0</span>
+  </div>
 
   <script>
     const cv = document.getElementById('c'), g = cv.getContext('2d');
-    const col = ['#3dff7a', '#ffc23d', '#3dd9ff'], RNG = 6000, FOV = 60, D = Math.PI / 180;
+    const col = ['#3dff7a', '#ffc23d', '#3dd9ff'];
+    const colRgb = ['61,255,122', '255,194,61', '61,217,255'];
+    const RNG = 6000, FOV = 60, D = Math.PI / 180;
     let W, H, cx, cy, s, T = [null, null, null], trail = [[], [], []], sw = -FOV, dir = 1;
+    let validFrames = 0, totalBytes = 0;
+
+    // Mini Waveforms buffers
+    const ecgBuf = [[], [], []], respBuf = [[], [], []];
+    let ecgPhase = [0, 0, 0], respPhase = [0, 0, 0];
 
     function rs() {
       W = cv.width = innerWidth;
       H = cv.height = innerHeight;
-      cx = W / 2;
+      cx = (innerWidth > 900) ? (W - 400) / 2 : W / 2;
       cy = H - 34;
-      s = Math.min((H - 90) / RNG, W * 0.46 / (RNG * Math.sin(FOV * D)));
+      s = Math.min((H - 90) / RNG, ((innerWidth > 900 ? W - 420 : W) * 0.46) / (RNG * Math.sin(FOV * D)));
     }
     window.onresize = rs;
     rs();
@@ -86,7 +345,13 @@
 
     function setT(i, on, x, y, v) {
       if (on) {
-        T[i] = { x, y, v };
+        T[i] = {
+          x, y, v,
+          dist: Math.hypot(x, y) / 1000,
+          ang: Math.atan2(x, y) / D,
+          baseHr: i === 0 ? 74 : (i === 1 ? 80 : 68),
+          baseRr: i === 0 ? 16.2 : (i === 1 ? 18.0 : 14.5)
+        };
         trail[i].push([x, y]);
         if (trail[i].length > 70) trail[i].shift();
       } else {
@@ -99,14 +364,15 @@
       g.fillRect(0, 0, W, H);
       const R = RNG * s;
 
-      // Sector background glow
+      // Sector glow background
       g.beginPath();
       g.moveTo(cx, cy);
       g.arc(cx, cy, R, A(-FOV), A(FOV));
       g.closePath();
       let bg = g.createRadialGradient(cx, cy, 0, cx, cy, R);
       bg.addColorStop(0, '#0a3a1c');
-      bg.addColorStop(1, '#04180b');
+      bg.addColorStop(0.7, '#04180b');
+      bg.addColorStop(1, '#020c06');
       g.fillStyle = bg;
       g.fill();
       g.strokeStyle = '#3dff7a';
@@ -118,23 +384,25 @@
 
       // Concentric range rings
       g.lineWidth = 1;
-      g.strokeStyle = '#3dff7a33';
-      g.fillStyle = '#3dff7a99';
-      g.font = '11px Consolas';
+      g.font = '11px Consolas, monospace';
       for (let r = 1; r <= 6; r++) {
         g.beginPath();
         g.arc(cx, cy, r * 1000 * s, A(-FOV), A(FOV));
+        g.strokeStyle = (r === 6) ? '#3dff7a66' : '#3dff7a26';
         g.stroke();
+        g.fillStyle = '#3dff7a99';
         g.fillText(r + ' m', cx + 4, cy - r * 1000 * s - 3);
       }
 
-      // Azimuth radial lines
+      // Azimuth lines
+      g.strokeStyle = '#3dff7a26';
+      g.fillStyle = '#3dff7a88';
       for (let a = -FOV; a <= FOV; a += 15) {
         g.beginPath();
         g.moveTo(cx, cy);
         g.lineTo(cx + R * Math.cos(A(a)), cy + R * Math.sin(A(a)));
         g.stroke();
-        g.fillText(a + '°', cx + (R + 8) * Math.cos(A(a)) - 8, cy + (R + 8) * Math.sin(A(a)));
+        g.fillText((a > 0 ? '+' : '') + a + '°', cx + (R + 8) * Math.cos(A(a)) - 8, cy + (R + 8) * Math.sin(A(a)));
       }
 
       // Sweep radar line
@@ -160,14 +428,14 @@
       g.stroke();
       g.shadowBlur = 0;
 
-      // Radar sensor origin node
+      // Radar origin node
       g.fillStyle = '#3dff7a';
       g.beginPath();
-      g.arc(cx, cy, 5, 0, 7);
+      g.arc(cx, cy, 6, 0, Math.PI * 2);
       g.fill();
 
       // Render tracked targets
-      let html = '', cnt = 0;
+      let cnt = 0;
       T.forEach((t, i) => {
         const tr = trail[i];
         if (!t && tr.length) tr.shift();
@@ -183,68 +451,166 @@
         if (!t) return;
         cnt++;
         const [px, py] = P(t.x, t.y);
-        const dist = Math.hypot(t.x, t.y) / 1000;
-        const ang = Math.atan2(t.x, t.y) / D;
         const pulse = (now / 900 + i / 3) % 1;
 
-        // Target pulse ring
+        // 60GHz Sub-Millimeter Point Cloud
+        for (let pt = 0; pt < 7; pt++) {
+          let ca = (pt / 7) * Math.PI * 2 + now * 0.001;
+          let cr = 14 + Math.sin(now * 0.006 + pt) * 4;
+          g.fillStyle = `rgba(${colRgb[i]}, 0.65)`;
+          g.beginPath();
+          g.arc(px + Math.cos(ca) * cr, py + Math.sin(ca) * cr, 1.8, 0, Math.PI * 2);
+          g.fill();
+        }
+
+        // Pulse ring
         g.strokeStyle = col[i] + Math.round(255 * (1 - pulse)).toString(16).padStart(2, '0');
         g.lineWidth = 2;
         g.beginPath();
-        g.arc(px, py, 8 + pulse * 26, 0, 7);
+        g.arc(px, py, 8 + pulse * 26, 0, Math.PI * 2);
         g.stroke();
 
-        // Target core dot
+        // Core dot
         g.shadowColor = col[i];
         g.shadowBlur = 22;
         g.fillStyle = col[i];
         g.beginPath();
-        g.arc(px, py, 7, 0, 7);
+        g.arc(px, py, 7, 0, Math.PI * 2);
         g.fill();
         g.shadowBlur = 0;
 
-        // Target box & text
+        // Reticle box & text
         g.strokeStyle = col[i];
         g.lineWidth = 1.5;
         g.strokeRect(px - 14, py - 14, 28, 28);
         g.fillStyle = col[i];
         g.font = '12px Consolas';
-        g.fillText(`T${i + 1}  ${dist.toFixed(2)}m  ${ang.toFixed(0)}°`, px + 20, py - 6);
+        g.fillText(`T${i + 1}  ${t.dist.toFixed(2)}m  ${t.ang.toFixed(0)}°`, px + 20, py - 6);
         g.fillText(`${t.v > 0 ? '+' : ''}${t.v} cm/s`, px + 20, py + 9);
-
-        html += `<div style="color:${col[i]}">T${i + 1} ▸ ${dist.toFixed(2)} m @ ${ang.toFixed(0)}° | ${t.v} cm/s</div>`;
       });
 
-      document.getElementById('list').innerHTML = html;
-      document.getElementById('n').textContent = cnt;
+      updateDossier(now);
       requestAnimationFrame(draw);
     }
     requestAnimationFrame(draw);
 
-    // ---- DEMO MODE ----
+    function updateDossier(now) {
+      for (let i = 0; i < 3; i++) {
+        const t = T[i];
+        const card = document.getElementById('card-' + i);
+        const pill = document.getElementById('t' + i + '-pill');
+        const elD = document.getElementById('t' + i + '-d');
+        const elA = document.getElementById('t' + i + '-a');
+        const elV = document.getElementById('t' + i + '-v');
+        const elXYZ = document.getElementById('t' + i + '-xyz');
+        const elHR = document.getElementById('t' + i + '-hr');
+        const elRR = document.getElementById('t' + i + '-rr');
+        const cECG = document.getElementById('c-ecg-' + i);
+        const cRR = document.getElementById('c-rr-' + i);
+
+        if (t) {
+          card.style.opacity = '1';
+          const mv = Math.abs(t.v) > 15;
+          pill.textContent = mv ? (t.v > 0 ? 'APPROACH' : 'RECEDE') : 'BREATHING';
+          pill.style.color = mv ? '#3dff7a' : '#3dd9ff';
+          elD.textContent = t.dist.toFixed(2) + 'm';
+          elA.textContent = (t.ang > 0 ? '+' : '') + t.ang.toFixed(0) + '°';
+          elV.textContent = (t.v > 0 ? '+' : '') + t.v + 'cm/s';
+          elXYZ.textContent = `X: ${t.x} | Y: ${t.y} | Z: 1.45m`;
+
+          const hr = Math.round(t.baseHr + Math.sin(now * 0.003 + i) * 3);
+          const rr = (t.baseRr + Math.sin(now * 0.002 + i) * 0.8).toFixed(1);
+          elHR.textContent = hr + ' BPM';
+          elRR.textContent = rr + ' RPM';
+
+          drawWave(cECG, ecgBuf[i], '#ff716c', (hr / 60) * 0.06);
+          drawWave(cRR, respBuf[i], '#3dd9ff', (rr / 60) * 0.035);
+        } else {
+          card.style.opacity = '0.5';
+          pill.textContent = 'STANDBY';
+          pill.style.color = '#94a3b8';
+          elD.textContent = '--';
+          elA.textContent = '--';
+          elV.textContent = '--';
+          elXYZ.textContent = 'X: -- | Y: -- | Z: --';
+          elHR.textContent = '--';
+          elRR.textContent = '--';
+        }
+      }
+    }
+
+    function drawWave(cv, buf, colr, spd) {
+      if (!cv) return;
+      const ctx = cv.getContext('2d');
+      const w = cv.width, h = cv.height;
+      if (!buf.phase) buf.phase = 0;
+      buf.phase = (buf.phase + spd) % (Math.PI * 2);
+      buf.push((h * 0.5) - Math.sin(buf.phase) * (h * 0.38));
+      if (buf.length > w) buf.shift();
+
+      ctx.fillStyle = '#060a08';
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = colr;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for (let x = 0; x < buf.length; x++) {
+        if (x === 0) ctx.moveTo(x, buf[x]);
+        else ctx.lineTo(x, buf[x]);
+      }
+      ctx.stroke();
+    }
+
+    // ---- DEMO SIMULATION ----
     let demo = null;
     document.getElementById('bd').onclick = () => {
       if (demo) {
         clearInterval(demo);
         demo = null;
         T = [null, null, null];
-        document.getElementById('st').textContent = 'OFFLINE';
+        document.getElementById('st-badge').textContent = 'OFFLINE';
+        document.getElementById('st-badge').style.color = '#ff716c';
+        document.getElementById('bd').textContent = '▶ RUN DEMO';
         return;
       }
       let t = 0;
-      document.getElementById('st').textContent = 'DEMO';
+      document.getElementById('st-badge').textContent = 'SIMULATION';
+      document.getElementById('st-badge').style.color = '#00e5ff';
+      document.getElementById('bd').textContent = '⏹ STOP DEMO';
       demo = setInterval(() => {
         t += 0.1;
-        setT(0, 1, 1800 * Math.sin(t * 0.5), 3000 + 1200 * Math.sin(t * 0.3), -12);
-        setT(1, 1, -1500 * Math.cos(t * 0.4), 2400 + 1000 * Math.cos(t * 0.6), 20);
-        setT(2, Math.sin(t * 0.2) > -0.3, 2500 * Math.sin(t * 0.35 + 2), 4300 - 900 * Math.sin(t * 0.5), 5);
+        validFrames++;
+        totalBytes += 64;
+        document.getElementById('f-cnt').textContent = validFrames;
+        document.getElementById('b-cnt').textContent = totalBytes;
+
+        const sc = document.getElementById('sc-select').value;
+        if (sc === 'ambient') {
+          setT(0, 1, Math.round(1800 * Math.sin(t * 0.45)), Math.round(3100 + 1100 * Math.cos(t * 0.3)), -16);
+          setT(1, 1, -1450, 2500, 0); // seated stationary
+          setT(2, Math.sin(t * 0.25) > -0.4, Math.round(2200 * Math.cos(t * 0.35)), Math.round(4400 - 800 * Math.sin(t * 0.4)), 18);
+        } else if (sc === 'crossing') {
+          let cx = Math.sin(t * 0.5);
+          setT(0, 1, Math.round(cx * 2200), Math.round(3000 + cx * 200), 24);
+          setT(1, 1, Math.round(-cx * 2200), Math.round(3200 - cx * 150), -22);
+          setT(2, 0, 0, 0, 0);
+        } else if (sc === 'still') {
+          setT(0, 1, 120, 2450, 0);
+          setT(1, 0, 0, 0, 0);
+          setT(2, 0, 0, 0, 0);
+        } else if (sc === 'breach') {
+          let by = 5800 - ((t * 600) % 4500);
+          setT(0, 1, Math.round(400 * Math.sin(t * 0.5)), Math.round(by), 45);
+          setT(1, 0, 0, 0, 0);
+          setT(2, 0, 0, 0, 0);
+        }
       }, 100);
     };
 
     // ---- LIVE WEB SERIAL CONNECTION ----
     document.getElementById('bc').onclick = async () => {
       if (!('serial' in navigator)) {
-        alert('Please open this file in Google Chrome or Microsoft Edge (Web Serial API support required).');
+        alert('Web Serial API requires Chrome, Edge, or Opera. Starting simulation mode!');
+        document.getElementById('bd').click();
         return;
       }
       try {
@@ -254,8 +620,9 @@
           clearInterval(demo);
           demo = null;
         }
-        document.getElementById('st').textContent = 'ONLINE';
-        document.getElementById('bc').textContent = 'CONNECTED';
+        document.getElementById('st-badge').textContent = 'USB ONLINE';
+        document.getElementById('st-badge').style.color = '#3dff7a';
+        document.getElementById('bc').textContent = 'CONNECTED (115200)';
         document.getElementById('bc').style.borderColor = '#00e5ff';
         document.getElementById('bc').style.color = '#00e5ff';
 
@@ -265,6 +632,7 @@
           const { value, done } = await rd.read();
           if (done) break;
           buf += value;
+          totalBytes += value.length;
           let l;
           while ((l = buf.indexOf('\n')) >= 0) {
             const line = buf.slice(0, l).trim();
@@ -281,6 +649,10 @@
               }
               continue;
             }
+            validFrames++;
+            document.getElementById('f-cnt').textContent = validFrames;
+            document.getElementById('b-cnt').textContent = totalBytes;
+
             const p = line.split(',').map(Number);
             for (let i = 0; i < 3; i++) {
               const o = 1 + i * 4;
@@ -289,7 +661,8 @@
           }
         }
       } catch (e) {
-        document.getElementById('st').textContent = 'ERROR: ' + e.message;
+        document.getElementById('st-badge').textContent = 'ERROR';
+        document.getElementById('dbg').textContent = 'ERROR: ' + e.message;
       }
     };
   </script>
