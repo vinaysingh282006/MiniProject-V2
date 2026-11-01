@@ -1,0 +1,222 @@
+/* ==========================================================================
+   RADAR FUSION — THEME & DESIGN TOKENS
+   Mood: Quiet, confident, premium, academic-professional (Apple / Linear / Stripe).
+   Colors: Dark graphite #0E0F11, Maroon #9E3544 (24 GHz), Green #3FB985 (60 GHz),
+           Fused Pure White #FFFFFF with dual ring, Alert #D6455D.
+   ========================================================================== */
+
+:root {
+  /* Color Palette — Enhanced Pop & Clarity */
+  --bg-base: #0E0F11;
+  --bg-raised: #151619;
+  --bg-elevated: #1B1D21;
+  --bg-subtle: #212429;
+
+  /* Primary Accent: Maroon (HLK-LD2452 24 GHz Sensor) */
+  --maroon-main: #9E3544;
+  --maroon-deep: #6B1F2A;
+  --maroon-soft: #C24A5B;
+  --maroon-tint: rgba(158, 53, 68, 0.12);
+  --maroon-glow: rgba(194, 74, 91, 0.28);
+  --maroon-border: rgba(194, 74, 91, 0.35);
+
+  /* Secondary Accent: Muted Green (HLK-LD6003D 60 GHz Sensor) */
+  --green-main: #3FB985;
+  --green-deep: #256B4D;
+  --green-soft: #63D4A3;
+  --green-tint: rgba(63, 185, 133, 0.12);
+  --green-glow: rgba(99, 212, 163, 0.28);
+  --green-border: rgba(99, 212, 163, 0.35);
+
+  /* Fused Semantic Color: Pure Soft White with Dual Ring */
+  --fused-white: #FFFFFF;
+  --fused-halo: rgba(255, 255, 255, 0.3);
+
+  /* Warning / Geofence Intrusion */
+  --alert-maroon: #D6455D;
+  --alert-bg: rgba(214, 69, 93, 0.14);
+
+  /* Typography Colors */
+  --text-primary: #F2F3F5;
+  --text-secondary: #A6ABB2;
+  --text-tertiary: #6E737B;
+  --text-muted: #52565D;
+
+  /* Typography Fonts */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, 'SF Mono', 'Courier New', monospace;
+
+  /* Spacing Scale */
+  --space-unit: 8px;
+  --container-max-width: 1200px;
+  --section-padding-desktop: 140px;
+  --section-padding-mobile: 80px;
+
+  /* Elevation & Curves */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 28px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  --transition-smooth: 300ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  --transition-page: 250ms ease-out;
+}
+
+/* Base Document Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-sans);
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+  overflow-x: hidden;
+}
+
+body {
+  background-color: transparent;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* Background Canvas Layer */
+#bg-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Soft Vignette Overlay */
+.vignette-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(circle at 50% 50%, rgba(14, 15, 17, 0.04) 0%, rgba(14, 15, 17, 0.55) 100%);
+}
+
+/* Main Content Container (z-index above background) */
+.page-wrapper {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container-max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* Typography Rules */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  line-height: 1.15;
+}
+
+h1 {
+  font-size: clamp(2.5rem, 5vw + 1rem, 4.5rem);
+}
+
+h2 {
+  font-size: clamp(1.85rem, 3vw + 0.5rem, 2.75rem);
+}
+
+h3 {
+  font-size: clamp(1.3rem, 2vw + 0.3rem, 1.75rem);
+}
+
+p {
+  color: var(--text-secondary);
+  font-size: 1.0625rem; /* ~17px */
+  line-height: 1.65;
+  max-width: 62ch;
+}
+
+.text-tertiary {
+  color: var(--text-tertiary);
+}
+
+.text-mono {
+  font-family: var(--font-mono);
+  letter-spacing: -0.01em;
+}
+
+/* Link Aesthetics */
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+/* Top Scroll Progress Line */
+#scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 2px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--maroon-main), var(--maroon-soft), var(--green-main));
+  z-index: 1000;
+  transition: width 50ms linear;
+}
+
+/* Selection Color */
+::selection {
+  background-color: var(--maroon-main);
+  color: #FFFFFF;
+}
+
+/* Custom Minimal Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-base);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Accessibility: Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+

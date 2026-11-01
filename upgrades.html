@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Future Upgrades & Research — Dual mmWave Radar Fusion System</title>
+  <meta name="description" content="Engineering roadmap upgrades: Extended Kalman Filtering, Hungarian assignment, vital signs, TinyML, ESP-NOW mesh, custom PCB, and PWA dashboard.">
+
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Theme Stylesheets -->
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/glass.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+</head>
+<body data-bg="grid-depth">
+
+  <div id="scroll-progress"></div>
+  <canvas id="bg-canvas"></canvas>
+  <div class="vignette-overlay"></div>
+
+  <div class="page-wrapper page-fade">
+
+    <!-- Floating Navigation Bar -->
+    <header class="floating-nav glass">
+      <div class="nav-brand">
+        <span class="brand-indicator"></span>
+        <span>Radar Fusion OS</span>
+      </div>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="ml.html" class="nav-link">Machine Learning</a></li>
+          <li><a href="simulation.html" class="nav-link">Simulation</a></li>
+          <li><a href="tech.html" class="nav-link">Tech & Architecture</a></li>
+          <li><a href="working.html" class="nav-link">Working & Demo</a></li>
+          <li><a href="upgrades.html" class="nav-link active">Upgrades</a></li>
+          <li><a href="roadmap.html" class="nav-link">Roadmap</a></li>
+          <li><a href="thanks.html" class="nav-link">Viva & Thanks</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="simulation.html" class="btn btn-primary btn-sm">Try Lab</a>
+        <button class="nav-hamburger" aria-label="Toggle Navigation Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile Drawer -->
+    <div class="mobile-nav-drawer glass-solid">
+      <a href="index.html" class="nav-link">1. Overview</a>
+      <a href="ml.html" class="nav-link">2. Machine Learning</a>
+      <a href="simulation.html" class="nav-link">3. Simulation Lab</a>
+      <a href="tech.html" class="nav-link">4. Tech & Architecture</a>
+      <a href="working.html" class="nav-link">5. Working & Demo</a>
+      <a href="upgrades.html" class="nav-link active">6. Future Upgrades</a>
+      <a href="roadmap.html" class="nav-link">7. Project Roadmap</a>
+      <a href="thanks.html" class="nav-link">8. Viva & Thanks</a>
+    </div>
+
+    <main class="container" style="padding-top: 130px; padding-bottom: 80px;">
+
+      <!-- Header Intro -->
+      <section style="margin-bottom: 48px;">
+        <span class="badge badge-fused" style="margin-bottom: 12px;">PAGE 06 / 08</span>
+        <h1 style="margin-bottom: 16px;">Future engineering upgrades.</h1>
+        <p>Strategic hardware and algorithmic enhancements designed to transition the Dual mmWave Platform from a laboratory capstone into a commercial-grade spatial sensing appliance.</p>
+      </section>
+
+      <!-- SECTION 1: FMCW CHIRP & BEAT FREQUENCY WAVE PHYSICS LAB -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass glass-solid" style="padding: 36px; border-radius: var(--radius-xl);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <span class="badge badge-fused" style="margin-bottom: 8px;">RF WAVE PHYSICS &amp; HOMODYNE MIXING</span>
+              <h2>1. FMCW Chirp &amp; Beat Frequency Physics</h2>
+              <p>Frequency-Modulated Continuous-Wave radars emit linear frequency chirps. The time delay &tau; between the transmitted chirp and the received echo produces a constant intermediate beat frequency (f<sub>b</sub>) proportional to distance.</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">&tau; DELAY:</span>
+              <span id="fmcw-tau-val" class="badge badge-maroon">24.0 ns</span>
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">BEAT f<sub>b</sub>:</span>
+              <span id="fmcw-fb-val" class="badge badge-green">116.6 kHz</span>
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">&Delta;R RES:</span>
+              <span id="fmcw-res-val" class="badge badge-fused">3.75 cm</span>
+            </div>
+          </div>
+
+          <!-- Interactive Parameter Controls -->
+          <div class="glass-subtle" style="padding: 16px 20px; border-radius: var(--radius-md); margin-bottom: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; align-items: center;">
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <label for="fmcw-dist-slider" class="text-mono" style="font-size: 0.75rem; color: var(--text-secondary);">Target Distance (R):</label>
+                <span class="text-mono" style="font-size: 0.75rem; color: #FFF;">0.5m &ndash; 6.0m</span>
+              </div>
+              <input type="range" id="fmcw-dist-slider" min="0.5" max="6.0" value="3.6" step="0.1" style="width: 100%; accent-color: var(--green-soft);">
+            </div>
+
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <label for="fmcw-bw-slider" class="text-mono" style="font-size: 0.75rem; color: var(--text-secondary);">Chirp Bandwidth (B):</label>
+                <span class="text-mono" style="font-size: 0.75rem; color: #FFF;">1.0GHz &ndash; 4.0GHz</span>
+              </div>
+              <input type="range" id="fmcw-bw-slider" min="1.0" max="4.0" value="4.0" step="0.5" style="width: 100%; accent-color: var(--maroon-soft);">
+            </div>
+
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                <label for="fmcw-vel-slider" class="text-mono" style="font-size: 0.75rem; color: var(--text-secondary);">Radial Velocity (v<sub>r</sub>):</label>
+                <span class="text-mono" style="font-size: 0.75rem; color: #FFF;">-2.0 &ndash; +2.0 m/s</span>
+              </div>
+              <input type="range" id="fmcw-vel-slider" min="-2.0" max="2.0" value="0.4" step="0.1" style="width: 100%; accent-color: #FFFFFF;">
+            </div>
+          </div>
+
+          <!-- FMCW Wave Physics Canvas -->
+          <div style="position: relative; width: 100%; height: 360px; border-radius: var(--radius-md); overflow: hidden; background: rgba(14, 15, 17, 0.85); margin-bottom: 24px;">
+            <canvas id="fmcw-wave-physics-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+          </div>
+
+          <!-- Theoretical Physics Formula Breakdown -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+            <div class="glass-subtle" style="padding: 18px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--green-soft); font-weight: 600;">1. LINEAR CHIRP RAMP EQUATION</span>
+              <div class="text-mono" style="font-size: 0.8125rem; color: #FFF; margin: 8px 0;">
+                f(t) = f<sub>0</sub> + S &middot; t, &nbsp; S = B / T<sub>c</sub>
+              </div>
+              <p style="font-size: 0.8125rem; color: var(--text-secondary);">
+                Synthesizer ramps frequency across 4 GHz sweep bandwidth B within chirp period T<sub>c</sub> = 50 &mu;s, producing slope S = 80 MHz/&mu;s.
+              </p>
+            </div>
+
+            <div class="glass-subtle" style="padding: 18px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--maroon-soft); font-weight: 600;">2. HOMODYNE MIXER DE-CHIRPING</span>
+              <div class="text-mono" style="font-size: 0.8125rem; color: #FFF; margin: 8px 0;">
+                f<sub>b</sub> = S &middot; (2R / c) + (2v<sub>r</sub> / &lambda;)
+              </div>
+              <p style="font-size: 0.8125rem; color: var(--text-secondary);">
+                Multiplying the received echo with the local oscillator yields the constant intermediate beat frequency f<sub>b</sub>, directly proportional to range R.
+              </p>
+            </div>
+
+            <div class="glass-subtle" style="padding: 18px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: #FFF; font-weight: 600;">3. RANGE-FFT RESOLUTION LIMIT</span>
+              <div class="text-mono" style="font-size: 0.8125rem; color: var(--green-soft); margin: 8px 0;">
+                &Delta;R = c / (2B) = 3.75 cm
+              </div>
+              <p style="font-size: 0.8125rem; color: var(--text-secondary);">
+                Applying a 512-point FFT on the beat signal extracts sharp range bin peaks. At B=4 GHz, targets separated by as little as 3.75 cm are resolved.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: 3D EXTENDED KALMAN FILTER (EKF) & HUNGARIAN MATCHING LAB -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass glass-solid" style="padding: 36px; border-radius: var(--radius-xl);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <span class="badge badge-green" style="margin-bottom: 8px;">3D MULTI-TARGET ESTIMATION</span>
+              <h2>2. 9-State Extended Kalman Filter &amp; Hungarian Matching</h2>
+              <p style="margin-top: 6px;">Visualizing 3D spatial covariance ellipsoids contracting over consecutive updates with global Hungarian bipartite track assignment.</p>
+            </div>
+            <button id="btn-ekf-mode-toggle" class="btn btn-green">Mode: 9-State EKF + Hungarian (Active)</button>
+          </div>
+
+          <div style="position: relative; width: 100%; height: 300px; border-radius: var(--radius-lg); overflow: hidden; background: rgba(14, 15, 17, 0.85); margin-bottom: 20px;">
+            <canvas id="ekf-3d-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+            <div class="glass-subtle" style="padding: 18px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--green-soft); font-weight: 600;">9-STATE KINEMATIC VECTOR</span>
+              <div class="text-mono" style="font-size: 0.8125rem; color: #FFF; margin: 8px 0;">
+                x = [x, y, z, v<sub>x</sub>, v<sub>y</sub>, v<sub>z</sub>, a<sub>x</sub>, a<sub>y</sub>, a<sub>z</sub>]<sup>T</sup>
+              </div>
+              <p style="font-size: 0.8125rem; color: var(--text-secondary);">
+                Incorporates 3D position, velocity, and acceleration derivatives to accurately track non-linear trajectories during human athletic maneuvers.
+              </p>
+            </div>
+
+            <div class="glass-subtle" style="padding: 18px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--maroon-soft); font-weight: 600;">HUNGARIAN DATA ASSOCIATION</span>
+              <div class="text-mono" style="font-size: 0.8125rem; color: #FFF; margin: 8px 0;">
+                C<sub>ij</sub> = &radic;((x<sub>i</sub> - z<sub>j</sub>)<sup>T</sup> S<sup>-1</sup> (x<sub>i</sub> - z<sub>j</sub>))
+              </div>
+              <p style="font-size: 0.8125rem; color: var(--text-secondary);">
+                Solves global assignment cost matrix via Kuhn-Munkres algorithm in O(N&sup3;), guaranteeing zero track-swapping when two individuals cross paths.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FEATURED LIVE COMPARISON: KALMAN FILTER BEFORE / AFTER CANVAS -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass glass-solid" style="padding: 36px; border-radius: var(--radius-xl);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <span class="badge badge-green" style="margin-bottom: 8px;">ACTIVE FILTER BENCHMARK</span>
+              <h2>Extended Kalman Filter vs Raw Measurement Jitter</h2>
+              <p style="margin-top: 6px;">Compare raw radar Cartesian noise against state-space Kalman prediction with Hungarian track association.</p>
+            </div>
+            <button id="kalman-toggle-btn" class="btn btn-green">Filter: Kalman Smoothed (Active)</button>
+          </div>
+
+          <div style="position: relative; width: 100%; height: 260px; border-radius: var(--radius-lg); overflow: hidden; background: rgba(14, 15, 17, 0.7);">
+            <canvas id="kalman-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-tertiary);">
+            <span>&bull; Raw Trace: Unfiltered polar observations subject to multi-path jitter.</span>
+            <span>&bull; Kalman Estimate: Smooth continuous velocity vector prediction.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 12 RESEARCH UPGRADE CARDS GRID -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+          
+          <!-- Card 1: Kalman + Hungarian -->
+          <div class="glass glass-hover p-6" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <span class="badge badge-green">DIFFICULTY: HIGH</span>
+                <span class="badge badge-fused">IMPACT: 5/5</span>
+              </div>
+              <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Kalman Filter &amp; Hungarian Algorithm</h3>
+              <p style="font-size: 0.875rem;">Replaces greedy pairing with global optimal bipartite graph matching and continuous velocity state estimation.</p>
+            </div>
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.75rem; color: var(--green-soft);">
+              Eliminates ID-swapping during crossings
+            </div>
+          </div>
+
+          <!-- Card 2: Vital Signs Extraction -->
+          <div class="glass glass-hover p-6" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <span class="badge badge-maroon">DIFFICULTY: HIGH</span>
+                <span class="badge badge-fused">IMPACT: 5/5</span>
+              </div>
+              <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Thoracic Vital Signs (BPM &amp; Respiration)</h3>
+              <p style="font-size: 0.875rem;">Extract sub-millimeter chest wall expansion from the 60 GHz phase angle to monitor heart rate and breathing without wearables.</p>
+            </div>
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-tertiary);">
+              0.1mm displacement sensitivity
+            </div>
+          </div>
+
+          <!-- Card 3: Fall Detection -->
+          <div class="glass glass-hover p-6" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <span class="badge badge-green">DIFFICULTY: MED</span>
+                <span class="badge badge-fused">IMPACT: 5/5</span>
+              </div>
+              <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Instantaneous Fall Detection</h3>
+              <p style="font-size: 0.875rem;">Triggers high-priority emergency alerts when sudden vertical velocity spikes downward followed by zero posture elevation.</p>
+            </div>
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.75rem; color: var(--green-soft);">
+              100% camera-free bathroom safety
+            </div>
+          </div>
+
+          <!-- Card 4: TinyML Activity Classification -->
+          <div class="glass glass-hover p-6" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <span class="badge badge-maroon">DIFFICULTY: HIGH</span>
+                <span class="badge badge-fused">IMPACT: 4/5</span>
+              </div>
+              <h3 style="font-size: 1.25rem; margin-bottom: 8px;">TinyML Micro-Doppler Classification</h3>
+              <p style="font-size: 0.875rem;">Run lightweight TensorFlow Lite for Microcontrollers on ESP32 Core 0 to classify walking, sitting, bending, and gestures.</p>
+            </div>
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-tertiary);">
+              Edge quantized 8-bit model
+            </div>
+          </div>
+
+          <!-- Card 5: MQTT & Home Assistant -->
+          <div class="glass glass-hover p-6" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <span class="badge badge-green">DIFFICULTY: LOW</span>
+                <span class="badge badge-fused">IMPACT: 4/5</span>
+              </div>
+              <h3 style="font-size: 1.25rem; margin-bottom: 8px;">MQTT &amp; Home Assistant Auto-Discovery</h3>
+              <p style="font-size: 0.875rem;">Automatic entity provisioning in Home Assistant via MQTT Discovery topics for seamless HVAC and lighting automations.</p>
+            </div>
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.75rem; color: var(--green-soft);">
+              Native smart home ecosystem link
+            </div>
+          </div>
+
+          <!-- Card 6: Progressive Web App -->
+          <div class="glass glass-hover p-6" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <span class="badge badge-green">DIFFICULTY: MED</span>
+                <span class="badge badge-fused">IMPACT: 4/5</span>
+              </div>
+              <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Progressive Web App (PWA) Mobile UI</h3>
+              <p style="font-size: 0.875rem;">Installable mobile dashboard with service worker offline caching, push notifications for breaches, and full-screen controls.</p>
+            </div>
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-tertiary);">
+              Zero app store dependency
+            </div>
+          </div>
+
+          <!-- Card 7: ESP-NOW Mesh -->
+          <div class="glass glass-hover p-6" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <span class="badge badge-maroon">DIFFICULTY: HIGH</span>
+                <span class="badge badge-fused">IMPACT: 5/5</span>
+              </div>
+              <h3 style="font-size: 1.25rem; margin-bottom: 8px;">ESP-NOW Multi-Node Mesh</h3>
+              <p style="font-size: 0.875rem;">Peer-to-peer 2.4 GHz wireless mesh coordinating 4+ radar stations around large buildings without local WiFi router dependence.</p>
+            </div>
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.75rem; color: var(--green-soft);">
+              Seamless room-to-room handoff
+            </div>
+          </div>
+
+          <!-- Card 8: 3D Point Cloud -->
+          <div class="glass glass-hover p-6" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <span class="badge badge-maroon">DIFFICULTY: MED</span>
+                <span class="badge badge-fused">IMPACT: 4/5</span>
+              </div>
+              <h3 style="font-size: 1.25rem; margin-bottom: 8px;">3D Volumetric Point Cloud</h3>
+              <p style="font-size: 0.875rem;">Full Cartesian [X, Y, Z] spatial rendering in WebGL, mapping occupant height and posture in true volumetric space.</p>
+            </div>
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-tertiary);">
+              Distinguishes crawling vs standing
+            </div>
+          </div>
+
+          <!-- Card 9: OTA Updates -->
+          <div class="glass glass-hover p-6" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <span class="badge badge-green">DIFFICULTY: LOW</span>
+                <span class="badge badge-fused">IMPACT: 3/5</span>
+              </div>
+              <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Over-The-Air (OTA) Updates</h3>
+              <p style="font-size: 0.875rem;">Two-partition dual-boot OTA firmware flashing via browser dashboard or PlatformIO CLI without USB disassembly.</p>
+            </div>
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.75rem; color: var(--green-soft);">
+              Zero field downtime
+            </div>
+          </div>
+
+          <!-- Card 10: MicroSD Logging -->
+          <div class="glass glass-hover p-6" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <span class="badge badge-green">DIFFICULTY: LOW</span>
+                <span class="badge badge-fused">IMPACT: 3/5</span>
+              </div>
+              <h3 style="font-size: 1.25rem; margin-bottom: 8px;">High-Rate MicroSD Logging</h3>
+              <p style="font-size: 0.875rem;">Continuous raw 10 Hz binary packet recording onto SD card via SD_MMC hardware bus for offline machine learning research.</p>
+            </div>
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-tertiary);">
+              Up to 60 MB/day continuous trace
+            </div>
+          </div>
+
+          <!-- Card 11: Custom 4-Layer PCB -->
+          <div class="glass glass-hover p-6" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <span class="badge badge-maroon">DIFFICULTY: HIGH</span>
+                <span class="badge badge-fused">IMPACT: 5/5</span>
+              </div>
+              <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Custom 4-Layer PCB &amp; Enclosure</h3>
+              <p style="font-size: 0.875rem;">Integrated ESP32-WROOM circuit board with controlled impedance RF layout, LDO filtering, and 3D printed ABS wall mount.</p>
+            </div>
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.75rem; color: var(--green-soft);">
+              Commercial finished product form
+            </div>
+          </div>
+
+          <!-- Card 12: Occupancy Heatmaps -->
+          <div class="glass glass-hover p-6" style="padding: 24px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+                <span class="badge badge-green">DIFFICULTY: MED</span>
+                <span class="badge badge-fused">IMPACT: 4/5</span>
+              </div>
+              <h3 style="font-size: 1.25rem; margin-bottom: 8px;">Spatial Dwell Heatmaps</h3>
+              <p style="font-size: 0.875rem;">Long-term spatial coordinate accumulators generating architectural traffic heatmaps and dwell analytics for workplace ergonomics.</p>
+            </div>
+            <div style="margin-top: 20px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-tertiary);">
+              Spatial density matrix
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Footer Nav -->
+      <div class="page-footer-nav">
+        <a href="working.html" class="footer-nav-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          <span>Prev: Working &amp; Demo</span>
+        </a>
+        <span class="text-mono" style="font-size: 0.8125rem; color: var(--text-tertiary);">PAGE 06 / 08 &bull; UPGRADES</span>
+        <a href="roadmap.html" class="footer-nav-btn">
+          <span>Next: Project Roadmap</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p style="font-size: 0.8125rem; color: var(--text-tertiary); margin: 0 auto;">
+          Dual mmWave Radar Fusion System &bull; Engineering College Capstone Project &bull; PlatformIO / ESP32
+        </p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Shared Scripts -->
+  <script src="assets/js/core.js"></script>
+  <script src="assets/js/background.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script src="assets/js/reveal.js"></script>
+  <script src="assets/js/diagrams.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      if (window.RFO && window.RFO.initFMCWWavePhysics) {
+        window.RFO.initFMCWWavePhysics('fmcw-wave-physics-canvas');
+      }
+      if (window.RFO && window.RFO.initEKF3DVisualizer) {
+        window.RFO.initEKF3DVisualizer('ekf-3d-canvas');
+      }
+      if (window.RFO && window.RFO.initKalmanComparison) {
+        window.RFO.initKalmanComparison('kalman-canvas');
+      }
+    });
+  </script>
+</body>
+</html>
+

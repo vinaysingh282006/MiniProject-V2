@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dual mmWave Radar Fusion System — Engineering Capstone</title>
+  <meta name="description" content="Dual mmWave Radar Fusion System (HLK-LD2452 24 GHz + HLK-LD6003D 60 GHz) for multi-target human positioning, tracking, and spatial geofence.">
+
+  <!-- Inter & JetBrains Mono Fonts (with local fallbacks) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Core Theme & Glass Styles -->
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/glass.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+</head>
+<body data-bg="aurora-mesh">
+
+  <!-- Top 2px Scroll Progress Line -->
+  <div id="scroll-progress"></div>
+
+  <!-- Ambient Full-Screen Motion Background Canvas & Vignette -->
+  <canvas id="bg-canvas"></canvas>
+  <div class="vignette-overlay"></div>
+
+  <!-- Page Content Wrapper -->
+  <div class="page-wrapper page-fade">
+
+    <!-- Floating Navigation Bar -->
+    <header class="floating-nav glass">
+      <div class="nav-brand">
+        <span class="brand-indicator"></span>
+        <span>Radar Fusion OS</span>
+      </div>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="index.html" class="nav-link active">Home</a></li>
+          <li><a href="ml.html" class="nav-link">Machine Learning</a></li>
+          <li><a href="simulation.html" class="nav-link">Simulation</a></li>
+          <li><a href="tech.html" class="nav-link">Tech & Architecture</a></li>
+          <li><a href="working.html" class="nav-link">Working & Demo</a></li>
+          <li><a href="upgrades.html" class="nav-link">Upgrades</a></li>
+          <li><a href="roadmap.html" class="nav-link">Roadmap</a></li>
+          <li><a href="thanks.html" class="nav-link">Viva & Thanks</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="simulation.html" class="btn btn-primary btn-sm">Try Lab</a>
+        <button class="nav-hamburger" aria-label="Toggle Navigation Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile Drawer -->
+    <div class="mobile-nav-drawer glass-solid">
+      <a href="index.html" class="nav-link active">1. Overview</a>
+      <a href="ml.html" class="nav-link">2. Machine Learning</a>
+      <a href="simulation.html" class="nav-link">3. Simulation Lab</a>
+      <a href="tech.html" class="nav-link">4. Tech & Architecture</a>
+      <a href="working.html" class="nav-link">5. Working & Demo</a>
+      <a href="upgrades.html" class="nav-link">6. Future Upgrades</a>
+      <a href="roadmap.html" class="nav-link">7. Project Roadmap</a>
+      <a href="thanks.html" class="nav-link">8. Viva & Thanks</a>
+    </div>
+
+    <main class="container" style="padding-top: 140px;">
+
+      <!-- SECTION 1: HERO -->
+      <section class="reveal" style="min-height: calc(100vh - 180px); display: flex; align-items: center; padding-bottom: 80px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 48px; align-items: center; width: 100%;">
+          
+          <!-- Left Column -->
+          <div>
+            <div style="display: flex; gap: 8px; margin-bottom: 20px;">
+              <span class="badge badge-maroon"><span class="badge-dot"></span>24 GHz HLK-LD2452</span>
+              <span class="badge badge-green"><span class="badge-dot"></span>60 GHz HLK-LD6003D</span>
+            </div>
+            <h1 style="margin-bottom: 24px; max-width: 14ch;">Seeing people through two radars.</h1>
+            <p style="font-size: 1.15rem; margin-bottom: 36px; max-width: 54ch;">
+              Multi-target human positioning, micro-motion trajectory tracking, and spatial geofence platform fusing 24 GHz presence gating with 60 GHz sub-millimeter Doppler point clouds on ESP32.
+            </p>
+            <div style="display: flex; flex-wrap: wrap; gap: 14px;">
+              <a href="simulation.html" class="btn btn-primary">Try the simulation</a>
+              <a href="#problem-section" class="btn btn-secondary">How it works</a>
+            </div>
+            <div style="display: flex; gap: 24px; margin-top: 40px; padding-top: 24px; border-top: 1px solid rgba(255, 255, 255, 0.05);">
+              <div>
+                <span class="text-mono" style="font-size: 0.8125rem; color: var(--text-tertiary);">CONTROLLER</span>
+                <div style="font-weight: 600; font-size: 0.9375rem; color: var(--text-primary); margin-top: 2px;">ESP32 240MHz</div>
+              </div>
+              <div>
+                <span class="text-mono" style="font-size: 0.8125rem; color: var(--text-tertiary);">FUSION RATE</span>
+                <div style="font-weight: 600; font-size: 0.9375rem; color: var(--text-primary); margin-top: 2px;">10 Hz / 100ms</div>
+              </div>
+              <div>
+                <span class="text-mono" style="font-size: 0.8125rem; color: var(--text-tertiary);">CONFIDENCE</span>
+                <div style="font-weight: 600; font-size: 0.9375rem; color: var(--green-soft); margin-top: 2px;">99.4% Verified</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Interactive Hero Radar Canvas -->
+          <div class="glass glass-hover" style="padding: 24px; border-radius: var(--radius-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span class="badge badge-fused">120° DUAL POLAR SECTOR</span>
+              </div>
+              <div class="segmented-control">
+                <button class="segmented-btn active" data-hero-scenario="converge">Converge</button>
+                <button class="segmented-btn" data-hero-scenario="crossing">Crossing</button>
+                <button class="segmented-btn" data-hero-scenario="still">Still</button>
+                <button class="segmented-btn" data-hero-scenario="occlusion">Latch</button>
+              </div>
+            </div>
+
+            <div style="position: relative; width: 100%; aspect-ratio: 4/3; border-radius: var(--radius-md); overflow: hidden; background: rgba(14, 15, 17, 0.4);">
+              <canvas id="hero-radar-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+            </div>
+
+            <!-- Live Hero Telemetry Strip -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 18px; text-align: center;">
+              <div class="glass-subtle" style="padding: 10px 6px;">
+                <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-tertiary); display: block;">DISTANCE</span>
+                <span id="hero-dist" class="text-mono" style="font-weight: 600; font-size: 0.9375rem; color: var(--text-primary);">3.42 m</span>
+              </div>
+              <div class="glass-subtle" style="padding: 10px 6px;">
+                <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-tertiary); display: block;">CONFIDENCE</span>
+                <span id="hero-conf" class="text-mono" style="font-weight: 600; font-size: 0.9375rem; color: var(--green-soft);">99.4 %</span>
+              </div>
+              <div class="glass-subtle" style="padding: 10px 6px;">
+                <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-tertiary); display: block;">RADIAL VEL</span>
+                <span id="hero-vel" class="text-mono" style="font-weight: 600; font-size: 0.9375rem; color: var(--text-primary);">+0.12 m/s</span>
+              </div>
+              <div class="glass-subtle" style="padding: 10px 6px;">
+                <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-tertiary); display: block;">MCU LATENCY</span>
+                <span id="hero-lat" class="text-mono" style="font-weight: 600; font-size: 0.9375rem; color: var(--maroon-soft);">14 ms</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- SECTION 2: THE PROBLEM -->
+      <section id="problem-section" class="reveal" style="padding: 120px 0;">
+        <div style="margin-bottom: 56px;">
+          <span class="badge badge-maroon" style="margin-bottom: 12px;">PHYSICAL SENSOR LIMITATIONS</span>
+          <h2 style="margin-bottom: 16px;">Why single legacy sensors fail indoors.</h2>
+          <p>Traditional indoor occupancy and security sensors suffer from inherent physical vulnerabilities, leading to false shut-offs, dead zones, and environmental multipath corruption.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+          
+          <!-- PIR Card -->
+          <div class="glass p-8" style="padding: 32px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(158, 53, 68, 0.15); display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C24A5B" stroke-width="2"><path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/></svg>
+              </div>
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--maroon-soft);">MODALITY 01</span>
+              <h3 style="font-size: 1.35rem; margin: 8px 0 12px 0;">Passive Infrared (PIR)</h3>
+              <p style="font-size: 0.9375rem; line-height: 1.6;">
+                Detects differential heat movement only across fresnel lenses. Completely misses stationary humans reading, typing, or sleeping. Zero coordinate localization.
+              </p>
+            </div>
+            <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: space-between; align-items: center;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">STILL DETECTION</span>
+              <span class="text-mono" style="color: var(--alert-maroon); font-size: 0.8125rem; font-weight: 600;">FAILS (0%)</span>
+            </div>
+          </div>
+
+          <!-- Ultrasonic Card -->
+          <div class="glass p-8" style="padding: 32px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(110, 115, 120, 0.15); display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A6ABB2" stroke-width="2"><path d="M12 3v18m-6-14v10m12-10v10m-18-6v2m24-2v2"/></svg>
+              </div>
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">MODALITY 02</span>
+              <h3 style="font-size: 1.35rem; margin: 8px 0 12px 0;">Ultrasonic Transducers</h3>
+              <p style="font-size: 0.9375rem; line-height: 1.6;">
+                Acoustic waves absorb into soft furniture and clothing. Vulnerable to room temperature gradients, air turbulence from HVAC, and narrow beam angles.
+              </p>
+            </div>
+            <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: space-between; align-items: center;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">MATERIAL PENETRATION</span>
+              <span class="text-mono" style="color: var(--alert-maroon); font-size: 0.8125rem; font-weight: 600;">BLOCKED (0%)</span>
+            </div>
+          </div>
+
+          <!-- Dual mmWave Fusion Card -->
+          <div class="glass glass-fused p-8" style="padding: 32px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="width: 48px; height: 48px; border-radius: 12px; background: rgba(63, 185, 133, 0.2); display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#63D4A3" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20M2 12a14.5 14.5 0 0 0 20 0"/></svg>
+              </div>
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--green-soft);">FUSED SOLUTION</span>
+              <h3 style="font-size: 1.35rem; margin: 8px 0 12px 0;">Dual-Band mmWave</h3>
+              <p style="font-size: 0.9375rem; line-height: 1.6;">
+                Penetrates non-conductive barriers. Simultaneously tracks distance gates and micro-Doppler chest displacements (breathing) with real-time 3D coordinate estimation.
+              </p>
+            </div>
+            <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid rgba(255, 255, 255, 0.05); display: flex; justify-content: space-between; align-items: center;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">TRACK CONFIDENCE</span>
+              <span class="text-mono" style="color: var(--green-soft); font-size: 0.8125rem; font-weight: 600;">99.4% OPTIMAL</span>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- SECTION 3: THE IDEA -->
+      <section class="reveal" style="padding: 100px 0;">
+        <div class="glass" style="padding: 48px; border-radius: var(--radius-xl); display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 48px; align-items: center;">
+          <div>
+            <span class="badge badge-green" style="margin-bottom: 16px;">THE FUSION CONCEPT</span>
+            <h2 style="margin-bottom: 20px;">Two frequencies. One confirmed target.</h2>
+            <p style="margin-bottom: 24px;">
+              By intersecting a 120° wide-angle 24 GHz presence anchor with a 100° high-precision 60 GHz point cloud, false-positives from reflections and single-sensor blind spots are mathematically eliminated.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 24px;">
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--maroon-main); margin-top: 6px;"></span>
+                <span style="font-size: 0.9375rem; color: var(--text-secondary);"><strong style="color: var(--text-primary);">24 GHz HLK-LD2452:</strong> Provides wide-area barrier penetration and reliable human presence gating.</span>
+              </div>
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--green-main); margin-top: 6px;"></span>
+                <span style="font-size: 0.9375rem; color: var(--text-secondary);"><strong style="color: var(--text-primary);">60 GHz HLK-LD6003D:</strong> Emits sub-wavelength chirps for mm-accurate 3D Cartesian coordinates and micro-vitals.</span>
+              </div>
+              <div style="display: flex; gap: 12px; align-items: flex-start;">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 0 2px var(--maroon-main), 0 0 0 3px var(--green-main); margin-top: 6px;"></span>
+                <span style="font-size: 0.9375rem; color: var(--text-secondary);"><strong style="color: var(--text-primary);">Euclidean Gating (d &le; 0.50m):</strong> Pairs observations to output a high-confidence single fused lock.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Overlapping Dual Cones Visual (SVG) -->
+          <div style="position: relative; width: 100%; aspect-ratio: 16/11; background: rgba(14, 15, 17, 0.5); border-radius: var(--radius-lg); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            <svg viewBox="0 0 500 350" style="width: 100%; height: 100%;">
+              <defs>
+                <radialGradient id="cone24" cx="250" cy="330" r="300" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#9E3544" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#9E3544" stop-opacity="0.0"/>
+                </radialGradient>
+                <radialGradient id="cone60" cx="250" cy="330" r="280" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stop-color="#3FB985" stop-opacity="0.3"/>
+                  <stop offset="100%" stop-color="#3FB985" stop-opacity="0.0"/>
+                </radialGradient>
+              </defs>
+              <!-- 24 GHz Cone (120 deg) -->
+              <path d="M 250,330 L 40,160 A 300,300 0 0,1 460,160 Z" fill="url(#cone24)" stroke="#9E3544" stroke-width="1.2" stroke-dasharray="3 3"/>
+              <!-- 60 GHz Cone (100 deg) -->
+              <path d="M 250,330 L 90,110 A 280,280 0 0,1 410,110 Z" fill="url(#cone60)" stroke="#3FB985" stroke-width="1.2" stroke-dasharray="3 3"/>
+              <!-- Origin Sensor Base -->
+              <circle cx="250" cy="330" r="6" fill="#FFFFFF"/>
+              <text x="250" y="346" text-anchor="middle" fill="#A6ABB2" font-family="JetBrains Mono" font-size="10">ESP32 SENSOR RIG</text>
+              <!-- Range Arc Guidelines -->
+              <circle cx="250" cy="330" r="120" fill="none" stroke="rgba(255,255,255,0.06)" stroke-dasharray="2 4"/>
+              <circle cx="250" cy="330" r="220" fill="none" stroke="rgba(255,255,255,0.06)" stroke-dasharray="2 4"/>
+              <!-- Target Location -->
+              <g transform="translate(280, 160)">
+                <!-- 0.50m Threshold Circle -->
+                <circle cx="0" cy="0" r="26" fill="none" stroke="rgba(255,255,255,0.3)" stroke-dasharray="2 2"/>
+                <text x="32" y="-12" fill="#A6ABB2" font-family="JetBrains Mono" font-size="9">d &le; 0.50m</text>
+                <!-- 24G return -->
+                <circle cx="-8" cy="4" r="5" fill="#9E3544"/>
+                <!-- 60G return -->
+                <circle cx="6" cy="-5" r="4.5" fill="#3FB985"/>
+                <!-- Fused Lock Center Dot -->
+                <circle cx="0" cy="0" r="6.5" fill="#FFFFFF"/>
+                <circle cx="0" cy="0" r="11" fill="none" stroke="#9E3544" stroke-width="1.2"/>
+                <circle cx="0" cy="0" r="15" fill="none" stroke="#3FB985" stroke-width="1.2"/>
+                <text x="22" y="16" fill="#FFFFFF" font-family="JetBrains Mono" font-weight="600" font-size="10">FUSED TARGET (99%)</text>
+              </g>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: NUMBERS ROW (6 COUNT-UP STATS) -->
+      <section class="reveal" style="padding: 60px 0 100px 0;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px;">
+          <div class="glass stat-card">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">RADARS FUSED</span>
+            <div class="stat-number" data-count="2">2</div>
+            <div class="stat-label">Sensors</div>
+            <div class="stat-subtext">24 GHz + 60 GHz</div>
+          </div>
+          <div class="glass stat-card">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">RADIAL DEPTH</span>
+            <div class="stat-number" data-count="6" data-suffix="m">6m</div>
+            <div class="stat-label">Active Range</div>
+            <div class="stat-subtext">16 Distance Gates</div>
+          </div>
+          <div class="glass stat-card">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">LOOP RATE</span>
+            <div class="stat-number" data-count="10" data-suffix=" Hz">10 Hz</div>
+            <div class="stat-label">Update Rate</div>
+            <div class="stat-subtext">100 ms Cycle Latency</div>
+          </div>
+          <div class="glass stat-card">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">AZIMUTH FOV</span>
+            <div class="stat-number" data-count="120" data-suffix="°">120°</div>
+            <div class="stat-label">Sector Arc</div>
+            <div class="stat-subtext">&plusmn;60° Coverage</div>
+          </div>
+          <div class="glass stat-card">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">LOCK CONFIDENCE</span>
+            <div class="stat-number" data-count="99" data-suffix="%" style="color: var(--green-soft);">99%</div>
+            <div class="stat-label">Fused Accuracy</div>
+            <div class="stat-subtext">Dual Disambiguation</div>
+          </div>
+          <div class="glass stat-card">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">MCU PROCESSOR</span>
+            <div class="stat-number" data-count="240" data-suffix=" MHz">240 MHz</div>
+            <div class="stat-label">Clock Speed</div>
+            <div class="stat-subtext">ESP32 Dual-Core</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 5: SYSTEM ARCHITECTURE -->
+      <section class="reveal" style="padding: 80px 0;">
+        <div style="margin-bottom: 48px;">
+          <span class="badge badge-fused" style="margin-bottom: 12px;">HARDWARE & FIRMWARE FLOW</span>
+          <h2 style="margin-bottom: 16px;">Asynchronous data pipeline.</h2>
+          <p>Two distinct hardware UART streams ingested via ESP32 FreeRTOS tasks, fused in real-time, and dispatched across local SPI display and wireless WebSocket dashboards.</p>
+        </div>
+
+        <div class="glass" style="padding: 36px; border-radius: var(--radius-xl); overflow-x: auto;">
+          <div style="min-width: 820px; display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+            
+            <!-- Sensor Inputs -->
+            <div style="display: flex; flex-direction: column; gap: 16px; width: 200px;">
+              <div class="glass-maroon" style="padding: 16px; border-radius: var(--radius-md);">
+                <span class="text-mono" style="font-size: 0.75rem; color: var(--maroon-soft);">HLK-LD2452 (24G)</span>
+                <div style="font-weight: 600; font-size: 0.9375rem; color: #FFF; margin: 4px 0;">UART1 (GPIO16/17)</div>
+                <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">256,000 bps &bull; 10Hz</span>
+              </div>
+              <div class="glass-green" style="padding: 16px; border-radius: var(--radius-md);">
+                <span class="text-mono" style="font-size: 0.75rem; color: var(--green-soft);">HLK-LD6003D (60G)</span>
+                <div style="font-weight: 600; font-size: 0.9375rem; color: #FFF; margin: 4px 0;">UART0 (GPIO25/26)</div>
+                <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">115,200 bps &bull; 10Hz</span>
+              </div>
+            </div>
+
+            <!-- Arrow 1 -->
+            <div style="display: flex; flex-direction: column; align-items: center; color: var(--text-tertiary); font-family: var(--font-mono); font-size: 0.75rem;">
+              <span>100ms Ingest</span>
+              <svg width="40" height="12"><line x1="0" y1="6" x2="35" y2="6" stroke="rgba(255,255,255,0.2)" stroke-width="2"/><polygon points="35,3 40,6 35,9" fill="rgba(255,255,255,0.4)"/></svg>
+            </div>
+
+            <!-- ESP32 Core Box -->
+            <div class="glass-solid" style="padding: 24px; width: 280px; border-radius: var(--radius-lg);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <span class="text-mono" style="font-weight: 600; font-size: 0.875rem; color: #FFF;">ESP32 Dual-Core</span>
+                <span class="badge badge-green" style="font-size: 0.6875rem;">PlatformIO</span>
+              </div>
+              <div class="glass-subtle" style="padding: 10px; margin-bottom: 8px;">
+                <span class="text-mono" style="font-size: 0.75rem; color: var(--maroon-soft);">CORE 0: PARSER TASK</span>
+                <div style="font-size: 0.8125rem; color: var(--text-secondary);">AA FF 03 00 Header Sync &amp; RingBuffer</div>
+              </div>
+              <div class="glass-subtle" style="padding: 10px;">
+                <span class="text-mono" style="font-size: 0.75rem; color: var(--green-soft);">CORE 1: FUSION TASK</span>
+                <div style="font-size: 0.8125rem; color: var(--text-secondary);">Euclidean Gating &amp; Spatial Merge</div>
+              </div>
+            </div>
+
+            <!-- Arrow 2 -->
+            <div style="display: flex; flex-direction: column; align-items: center; color: var(--text-tertiary); font-family: var(--font-mono); font-size: 0.75rem;">
+              <span>Dispatched</span>
+              <svg width="40" height="12"><line x1="0" y1="6" x2="35" y2="6" stroke="rgba(255,255,255,0.2)" stroke-width="2"/><polygon points="35,3 40,6 35,9" fill="rgba(255,255,255,0.4)"/></svg>
+            </div>
+
+            <!-- Output Consumers -->
+            <div style="display: flex; flex-direction: column; gap: 10px; width: 200px;">
+              <div class="glass-subtle" style="padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: 500; font-size: 0.875rem; color: #FFF;">3.5" TFT SPI</div>
+                  <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-tertiary);">ILI9488 &bull; 480x320</span>
+                </div>
+                <span class="badge badge-fused">SPI</span>
+              </div>
+              <div class="glass-subtle" style="padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: 500; font-size: 0.875rem; color: #FFF;">WebSocket Dash</div>
+                  <span class="text-mono" style="font-size: 0.6875rem; color: var(--green-soft);">Port 80 / SoftAP</span>
+                </div>
+                <span class="badge badge-green">LIVE</span>
+              </div>
+              <div class="glass-subtle" style="padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                  <div style="font-weight: 500; font-size: 0.875rem; color: #FFF;">Piezo Buzzer</div>
+                  <span class="text-mono" style="font-size: 0.6875rem; color: var(--maroon-soft);">GPIO32 &bull; Intrusion</span>
+                </div>
+                <span class="badge badge-maroon">ALERT</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 6: TWO SENSORS COMPARED (WITH WAVELENGTH SINE GENERATOR) -->
+      <section class="reveal" style="padding: 80px 0;">
+        <div style="margin-bottom: 48px;">
+          <span class="badge badge-maroon" style="margin-bottom: 12px;">PHYSICAL COMPARISON</span>
+          <h2 style="margin-bottom: 16px;">True relative wavelength physics.</h2>
+          <p>24 GHz offers long penetration wavelengths for wide-angle presence, whereas 60 GHz provides 2.5x tighter wavelengths for sub-millimeter thoracic micro-motion.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 32px; align-items: center;">
+          <!-- Left: Animated Wavelength Generator Canvas -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-xl);">
+            <div style="margin-bottom: 12px; display: flex; justify-content: space-between;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">LIVE WAVE GENERATOR</span>
+              <span class="badge badge-fused">RATIO 2.5 : 1</span>
+            </div>
+            <div style="position: relative; width: 100%; height: 220px; border-radius: var(--radius-md); overflow: hidden; background: rgba(14, 15, 17, 0.6);">
+              <canvas id="wavelength-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+            </div>
+          </div>
+
+          <!-- Right: Clean Comparison Matrix Table -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-xl); overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                  <th style="padding: 12px 16px; color: var(--text-tertiary); font-family: var(--font-mono); font-size: 0.75rem;">METRIC</th>
+                  <th style="padding: 12px 16px; color: var(--maroon-soft); font-family: var(--font-mono); font-size: 0.75rem;">HLK-LD2452 (24G)</th>
+                  <th style="padding: 12px 16px; color: var(--green-soft); font-family: var(--font-mono); font-size: 0.75rem;">HLK-LD6003D (60G)</th>
+                </tr>
+              </thead>
+              <tbody style="color: var(--text-secondary);">
+                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.04);">
+                  <td style="padding: 14px 16px; font-weight: 500; color: #FFF;">Wavelength (&lambda;)</td>
+                  <td style="padding: 14px 16px; font-family: var(--font-mono);">~12.5 mm</td>
+                  <td style="padding: 14px 16px; font-family: var(--font-mono);">~5.0 mm</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.04);">
+                  <td style="padding: 14px 16px; font-weight: 500; color: #FFF;">Antenna Array</td>
+                  <td style="padding: 14px 16px; font-family: var(--font-mono);">1T2R (1 TX, 2 RX)</td>
+                  <td style="padding: 14px 16px; font-family: var(--font-mono);">2T2R MIMO Array</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.04);">
+                  <td style="padding: 14px 16px; font-weight: 500; color: #FFF;">Max Targets</td>
+                  <td style="padding: 14px 16px; font-family: var(--font-mono);">Up to 3 targets</td>
+                  <td style="padding: 14px 16px; font-family: var(--font-mono);">3 - 4 targets</td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.04);">
+                  <td style="padding: 14px 16px; font-weight: 500; color: #FFF;">UART Interface</td>
+                  <td style="padding: 14px 16px; font-family: var(--font-mono);">256,000 bps (GPIO16/17)</td>
+                  <td style="padding: 14px 16px; font-family: var(--font-mono);">115,200 bps (GPIO25/26)</td>
+                </tr>
+                <tr>
+                  <td style="padding: 14px 16px; font-weight: 500; color: #FFF;">Primary Strength</td>
+                  <td style="padding: 14px 16px; color: var(--maroon-soft);">Penetrates drywall/clothing</td>
+                  <td style="padding: 14px 16px; color: var(--green-soft);">Fine angular &amp; micro-motion</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 6B: INTERACTIVE 3D WAVE MATERIAL PENETRATION & ATTENUATION -->
+      <section class="reveal" style="padding: 40px 0 80px 0;">
+        <div class="glass" style="padding: 40px; border-radius: var(--radius-xl);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <span class="badge badge-fused" style="margin-bottom: 12px;">DIELECTRIC RF ABSORPTION PHYSICS</span>
+              <h2 style="margin-bottom: 12px;">Interactive wave material penetration lab.</h2>
+              <p>Observe how 24 GHz (&lambda;=12.5mm) penetrates interior drywall partitions with minimal loss, while 60 GHz (&lambda;=5.0mm) experiences high absorption, eliminating exterior false alarms.</p>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+              <span id="wall-atten-db" class="badge badge-maroon" style="font-family: var(--font-mono);">24G: -1.0dB | 60G: -11.3dB</span>
+              <span id="wall-trans-pct" class="badge badge-green" style="font-family: var(--font-mono);">24G: 80% pass | 60G: 7% pass</span>
+            </div>
+          </div>
+
+          <!-- Interactive Controls Bar -->
+          <div class="glass-subtle" style="padding: 16px 20px; border-radius: var(--radius-md); margin-bottom: 20px; display: flex; gap: 24px; align-items: center; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <label for="wall-material-select" class="text-mono" style="font-size: 0.8125rem; color: var(--text-secondary);">Partition Material:</label>
+              <select id="wall-material-select" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); color: #FFF; padding: 6px 12px; border-radius: 6px; font-family: var(--font-mono); font-size: 0.8125rem;">
+                <option value="drywall">Drywall Partition (Interior)</option>
+                <option value="wood">Plywood Board (Doors/Furniture)</option>
+                <option value="concrete">Reinforced Concrete (Outer Wall)</option>
+                <option value="clothing">Winter Clothing Layer</option>
+              </select>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 200px;">
+              <label for="wall-thickness-slider" class="text-mono" style="font-size: 0.8125rem; color: var(--text-secondary);">Thickness:</label>
+              <input type="range" id="wall-thickness-slider" min="4" max="25" value="12" step="1" style="flex: 1; accent-color: var(--green-soft);">
+            </div>
+          </div>
+
+          <!-- Canvas Visualizer -->
+          <div style="position: relative; width: 100%; height: 280px; border-radius: var(--radius-md); overflow: hidden; background: rgba(14, 15, 17, 0.7);">
+            <canvas id="wave-penetration-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 7: FUSION IN 30 SECONDS (MATHEMATICAL THRESHOLD) -->
+      <section class="reveal" style="padding: 80px 0;">
+        <div class="glass glass-solid" style="padding: 48px; border-radius: var(--radius-xl);">
+          <div style="max-width: 600px; margin-bottom: 32px;">
+            <span class="badge badge-green" style="margin-bottom: 12px;">CALCULATED EVERY 100 MS</span>
+            <h2 style="margin-bottom: 16px;">The fusion algorithm in 30 seconds.</h2>
+            <p>A deterministic greedy association pipeline that converts raw polar clutter into an authoritative tracking coordinate.</p>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; margin-bottom: 36px;">
+            <div class="glass-subtle" style="padding: 24px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--maroon-soft);">1. EUCLIDEAN GATING</span>
+              <div class="text-mono" style="font-size: 1.125rem; font-weight: 600; color: #FFF; margin: 12px 0;">dd &le; 0.50 m</div>
+              <p style="font-size: 0.875rem;">If the distance between 24G and 60G returns is &le; 0.50m, the target is confirmed and elevated to 99% confidence.</p>
+            </div>
+
+            <div class="glass-subtle" style="padding: 24px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--green-soft);">2. ASYMMETRIC WEIGHTING</span>
+              <div class="text-mono" style="font-size: 1.125rem; font-weight: 600; color: #FFF; margin: 12px 0;">X = 0.45&middot;X24 + 0.55&middot;X60</div>
+              <p style="font-size: 0.875rem;">60 GHz receives higher weight (0.55) along azimuth for its narrower beam, while distance is balanced 50/50.</p>
+            </div>
+
+            <div class="glass-subtle" style="padding: 24px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">3. ASYMMETRIC LATCH</span>
+              <div class="text-mono" style="font-size: 1.125rem; font-weight: 600; color: #FFF; margin: 12px 0;">Fallback: 5.000s</div>
+              <p style="font-size: 0.875rem;">If 60G drops during zero-motion pauses, 24G energy gates maintain the track for 5 seconds without flickering off.</p>
+            </div>
+          </div>
+
+          <!-- Formula Code Display -->
+          <div class="code-card">
+            <span class="code-comment">// FMCW Radar Range Equation</span><br>
+            <span class="code-keyword">R</span> = (<span class="code-func">c</span> &middot; <span class="code-keyword">Tc</span> &middot; <span class="code-keyword">fb</span>) / (<span class="code-num">2</span> &middot; <span class="code-keyword">B</span>)<br><br>
+            <span class="code-comment">// Euclidean Association &amp; Linear Position Interpolation</span><br>
+            <span class="code-keyword">float</span> dd = <span class="code-func">sqrt</span>(<span class="code-func">sq</span>(X24 - X60) + <span class="code-func">sq</span>(Y24 - Y60));<br>
+            <span class="code-keyword">if</span> (dd &lt;= <span class="code-num">0.50f</span>) {<br>
+            &nbsp;&nbsp;fused.x = <span class="code-num">0.45f</span> * X24 + <span class="code-num">0.55f</span> * X60;<br>
+            &nbsp;&nbsp;fused.y = <span class="code-num">0.50f</span> * Y24 + <span class="code-num">0.50f</span> * Y60;<br>
+            &nbsp;&nbsp;fused.confidence = <span class="code-num">99</span>;<br>
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 8: HARDWARE & POWER BUDGET -->
+      <section class="reveal" style="padding: 80px 0;">
+        <div style="margin-bottom: 48px;">
+          <span class="badge badge-maroon" style="margin-bottom: 12px;">ELECTRICAL INTEGRATION</span>
+          <h2 style="margin-bottom: 16px;">ESP32 GPIO matrix &amp; power budget.</h2>
+          <p>Full schematic pinouts, VSPI bus line sharing, and power budget verification ensuring continuous operation without brownout resets.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 32px;">
+          
+          <!-- GPIO Interactive Matrix -->
+          <div class="glass" style="padding: 28px; border-radius: var(--radius-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+              <span class="text-mono" style="font-size: 0.8125rem; font-weight: 600; color: #FFF;">GPIO MATRIX ROUTING</span>
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button class="chip-selector active btn btn-secondary btn-sm" data-chip="all">All</button>
+                <button class="chip-selector btn btn-secondary btn-sm" data-chip="ld2452">LD2452</button>
+                <button class="chip-selector btn btn-secondary btn-sm" data-chip="ld6003d">LD6003D</button>
+                <button class="chip-selector btn btn-secondary btn-sm" data-chip="tft">TFT</button>
+                <button class="chip-selector btn btn-secondary btn-sm" data-chip="forbidden" style="color: var(--alert-maroon);">Flash (9/10)</button>
+              </div>
+            </div>
+
+            <div style="max-height: 260px; overflow-y: auto;">
+              <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem; font-family: var(--font-mono);">
+                <tbody>
+                  <tr class="gpio-row" data-group="ld2452" style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 8px; color: var(--maroon-soft);">GPIO 16 / 17</td><td style="padding: 8px;">UART1 RX / TX</td><td style="padding: 8px; color: var(--text-tertiary);">LD2452 24G Sensor</td></tr>
+                  <tr class="gpio-row" data-group="ld6003d" style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 8px; color: var(--green-soft);">GPIO 25 / 26</td><td style="padding: 8px;">UART0 Remap RX / TX</td><td style="padding: 8px; color: var(--text-tertiary);">LD6003D 60G Sensor</td></tr>
+                  <tr class="gpio-row" data-group="tft" style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 8px; color: #FFF;">GPIO 23 / 18 / 19</td><td style="padding: 8px;">VSPI MOSI / SCK / MISO</td><td style="padding: 8px; color: var(--text-tertiary);">Shared TFT + Touch Bus</td></tr>
+                  <tr class="gpio-row" data-group="tft" style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 8px; color: #FFF;">GPIO 15 / 2 / 4 / 27</td><td style="padding: 8px;">TFT CS / DC / RST / BL</td><td style="padding: 8px; color: var(--text-tertiary);">ILI9488 Control Lines</td></tr>
+                  <tr class="gpio-row" data-group="touch" style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 8px; color: #FFF;">GPIO 21 / 22</td><td style="padding: 8px;">TOUCH CS / IRQ</td><td style="padding: 8px; color: var(--text-tertiary);">XPT2046 Resistive Touch</td></tr>
+                  <tr class="gpio-row" data-group="buzzer" style="border-bottom: 1px solid rgba(255,255,255,0.04);"><td style="padding: 8px; color: var(--maroon-soft);">GPIO 32</td><td style="padding: 8px;">PWM Buzzer</td><td style="padding: 8px; color: var(--text-tertiary);">Intrusion Alarm</td></tr>
+                  <tr class="gpio-row" data-group="forbidden" style="background: rgba(214, 69, 93, 0.1);"><td style="padding: 8px; color: var(--alert-maroon);">GPIO 9 / 10</td><td style="padding: 8px; color: var(--alert-maroon);">SPI FLASH (FORBIDDEN)</td><td style="padding: 8px; color: var(--alert-maroon);">DO NOT USE (Boot Loop)</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div id="gpio-note" class="text-mono" style="margin-top: 16px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; font-size: 0.75rem; color: var(--text-secondary);">
+              Select any chip above to highlight hardware routing details.
+            </div>
+          </div>
+
+          <!-- Power Budget Breakdown -->
+          <div class="glass" style="padding: 28px; border-radius: var(--radius-xl); display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <span class="text-mono" style="font-size: 0.8125rem; font-weight: 600; color: #FFF;">POWER CONSUMPTION BUDGET</span>
+                <span class="text-mono" style="color: var(--maroon-soft); font-weight: 600; font-size: 0.875rem;">~700 mA PEAK</span>
+              </div>
+              <p style="font-size: 0.875rem; margin-bottom: 24px;">
+                Total system draw requires a dedicated <strong>5V 2A power supply</strong>. Standard 500mA laptop USB ports will trigger brownout watchdog resets.
+              </p>
+
+              <!-- Stacked Bar Visual -->
+              <div style="width: 100%; height: 16px; border-radius: 8px; background: rgba(255,255,255,0.06); display: flex; overflow: hidden; margin-bottom: 20px;">
+                <div style="width: 34%; background: var(--maroon-main);" title="ESP32 (240mA)"></div>
+                <div style="width: 25%; background: var(--green-main);" title="TFT Backlight (180mA)"></div>
+                <div style="width: 20%; background: #E5C07B;" title="LD6003D (150mA)"></div>
+                <div style="width: 21%; background: #6F7378;" title="LD2452 (130mA)"></div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-family: var(--font-mono); font-size: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 8px; height: 8px; background: var(--maroon-main); border-radius: 2px;"></span><span>ESP32 Peak: ~240 mA</span></div>
+                <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 8px; height: 8px; background: var(--green-main); border-radius: 2px;"></span><span>TFT Backlight: ~180 mA</span></div>
+                <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 8px; height: 8px; background: #E5C07B; border-radius: 2px;"></span><span>LD6003D: ~150 mA</span></div>
+                <div style="display: flex; align-items: center; gap: 8px;"><span style="width: 8px; height: 8px; background: #6F7378; border-radius: 2px;"></span><span>LD2452: ~130 mA</span></div>
+              </div>
+            </div>
+
+            <div style="margin-top: 24px; padding: 12px; background: rgba(158, 53, 68, 0.12); border-radius: 8px; font-size: 0.8125rem; color: var(--maroon-soft);">
+              &bull; Include 100&ndash;470 &mu;F bulk + 0.1 &mu;F ceramic decoupling capacitors across 5V/GND rail.
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- SECTION 9: TWO SCREENS PREVIEW (TFT VS WEB DASHBOARD) -->
+      <section class="reveal" style="padding: 80px 0;">
+        <div style="margin-bottom: 48px;">
+          <span class="badge badge-fused" style="margin-bottom: 12px;">DUAL DISPLAY SURFACES</span>
+          <h2 style="margin-bottom: 16px;">Two screens. Real-time parity.</h2>
+          <p>Local standalone 3.5" touch LCD and wireless browser dashboard updating synchronously at 10 Hz.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 32px;">
+          
+          <!-- Mock TFT 480x320 Landscape -->
+          <div class="glass glass-solid" style="padding: 24px; border-radius: var(--radius-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <span class="text-mono" style="font-size: 0.8125rem; color: var(--text-tertiary);">PHYSICAL 3.5" TFT (480x320)</span>
+              <span class="badge badge-green">SPI HARDWARE</span>
+            </div>
+            <!-- TFT Bezel -->
+            <div style="width: 100%; aspect-ratio: 480/320; background: #000; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; border: 2px solid rgba(255,255,255,0.06);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="text-mono" style="font-size: 0.75rem; color: #FFF; font-weight: 600;">RADAR FUSION OS v2.4</span>
+                <span class="text-mono" style="font-size: 0.6875rem; color: var(--green-soft);">LOCK: 99.4%</span>
+              </div>
+              <div style="text-align: center; color: var(--text-tertiary); font-family: var(--font-mono); font-size: 0.8125rem;">
+                <div style="display: inline-block; padding: 6px 14px; background: rgba(255,255,255,0.05); border-radius: 8px;">
+                  X: +0.22m &nbsp;|&nbsp; Y: 3.42m &nbsp;|&nbsp; Speed: 0.12m/s
+                </div>
+              </div>
+              <div style="display: flex; gap: 6px; justify-content: center;">
+                <span class="badge badge-maroon" style="font-size: 0.625rem;">[24G]</span>
+                <span class="badge badge-green" style="font-size: 0.625rem;">[60G]</span>
+                <span class="badge badge-fused" style="font-size: 0.625rem;">[DUAL]</span>
+                <span class="badge" style="background: rgba(255,255,255,0.1); font-size: 0.625rem;">ZOOM 6m</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mock Web Console Dashboard -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+              <span class="text-mono" style="font-size: 0.8125rem; color: var(--text-tertiary);">BROWSER CONSOLE DASHBOARD</span>
+              <span class="badge badge-green">PORT 80 / SoftAP</span>
+            </div>
+            <!-- Browser Mock -->
+            <div style="width: 100%; aspect-ratio: 480/320; background: rgba(20,22,25,0.85); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.06);">
+              <div style="display: flex; gap: 8px; align-items: center; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #FF5F56;"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #FFBD2E;"></span>
+                <span style="width: 8px; height: 8px; border-radius: 50%; background: #27C93F;"></span>
+                <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-tertiary); margin-left: 12px;">http://192.168.4.1</span>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0;">
+                <div class="glass-subtle" style="padding: 10px; font-family: var(--font-mono); font-size: 0.75rem;">
+                  <span style="color: var(--text-tertiary);">Live Geofence:</span><br>
+                  <span style="color: var(--green-soft);">ARMED [ZONE A]</span>
+                </div>
+                <div class="glass-subtle" style="padding: 10px; font-family: var(--font-mono); font-size: 0.75rem;">
+                  <span style="color: var(--text-tertiary);">CSV Logging:</span><br>
+                  <span style="color: #FFF;">ACTIVE (10 Hz)</span>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-tertiary);">WebSocket: Connected (14ms ping)</span>
+                <a href="simulation.html" class="btn btn-primary btn-sm" style="padding: 4px 10px; font-size: 0.75rem;">Open Lab &rarr;</a>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- SECTION 10: DASHBOARD FEATURES (6 GLASS TILES) -->
+      <section class="reveal" style="padding: 80px 0;">
+        <div style="margin-bottom: 48px;">
+          <span class="badge badge-green" style="margin-bottom: 12px;">WEBSITE CAPABILITIES</span>
+          <h2 style="margin-bottom: 16px;">Console dashboard features.</h2>
+          <p>Engineered for high-rate data capture, spatial perimeter defense, and seamless field evaluation.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px;">
+          <div class="glass p-6" style="padding: 24px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(214,69,93,0.15); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D6455D" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" stroke-dasharray="3 3"/></svg>
+            </div>
+            <h3 style="font-size: 1.125rem; margin-bottom: 8px;">Click-and-Drag Geofence</h3>
+            <p style="font-size: 0.875rem;">Define custom rectangular spatial intrusion zones directly on the canvas radar view.</p>
+          </div>
+
+          <div class="glass p-6" style="padding: 24px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(63,185,133,0.15); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3FB985" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            </div>
+            <h3 style="font-size: 1.125rem; margin-bottom: 8px;">Live Strip Charts</h3>
+            <p style="font-size: 0.875rem;">High-performance canvas time-series for distance and radial velocity trends @ 10 Hz.</p>
+          </div>
+
+          <div class="glass p-6" style="padding: 24px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(158,53,68,0.15); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C24A5B" stroke-width="2"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            </div>
+            <h3 style="font-size: 1.125rem; margin-bottom: 8px;">Web Audio Alarm</h3>
+            <p style="font-size: 0.875rem;">Synthesized low-latency audio chirps on perimeter breach using browser Web Audio API.</p>
+          </div>
+
+          <div class="glass p-6" style="padding: 24px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFF" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </div>
+            <h3 style="font-size: 1.125rem; margin-bottom: 8px;">One-Click CSV Export</h3>
+            <p style="font-size: 0.875rem;">Download raw timestamped telemetry logs (X, Y, Speed, Confidence) for MATLAB or Python analysis.</p>
+          </div>
+
+          <div class="glass p-6" style="padding: 24px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(63,185,133,0.15); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3FB985" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/></svg>
+            </div>
+            <h3 style="font-size: 1.125rem; margin-bottom: 8px;">3-Way Mode Switcher</h3>
+            <p style="font-size: 0.875rem;">Isolate raw 24G, raw 60G, or FUSED tracking to compare false-positive rejection live.</p>
+          </div>
+
+          <div class="glass p-6" style="padding: 24px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(158,53,68,0.15); display: flex; align-items: center; justify-content: center; margin-bottom: 16px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#C24A5B" stroke-width="2"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+            </div>
+            <h3 style="font-size: 1.125rem; margin-bottom: 8px;">Real-Time WebSocket Stream</h3>
+            <p style="font-size: 0.875rem;">Connect to real hardware or browser virtual rig with automatic reconnect and zero polling.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 11: WHERE IT IS USED (5 REAL-WORLD SCENES) -->
+      <section class="reveal" style="padding: 80px 0;">
+        <div style="margin-bottom: 48px;">
+          <span class="badge badge-fused" style="margin-bottom: 12px;">DEPLOYMENT HORIZONS</span>
+          <h2 style="margin-bottom: 16px;">Where dual mmWave transforms tracking.</h2>
+          <p>Zero-optical, 100% privacy-preserving spatial awareness across sensitive residential and commercial zones.</p>
+        </div>
+
+        <div style="display: flex; gap: 24px; overflow-x: auto; padding-bottom: 16px;" class="no-scrollbar">
+          
+          <div class="glass" style="min-width: 280px; max-width: 280px; padding: 28px; border-radius: var(--radius-lg); flex-shrink: 0;">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--green-soft);">APPLICATION 01</span>
+            <h3 style="font-size: 1.25rem; margin: 12px 0 10px 0;">Smart Home HVAC</h3>
+            <p style="font-size: 0.875rem; line-height: 1.6;">Zone-targeted airflow and lighting that stays active even when occupants are reading or sleeping. Zero false shut-offs.</p>
+          </div>
+
+          <div class="glass" style="min-width: 280px; max-width: 280px; padding: 28px; border-radius: var(--radius-lg); flex-shrink: 0;">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--maroon-soft);">APPLICATION 02</span>
+            <h3 style="font-size: 1.25rem; margin: 12px 0 10px 0;">Elderly Care &amp; Fall</h3>
+            <p style="font-size: 0.875rem; line-height: 1.6;">Bed exit monitoring and sudden elevation drops in bathrooms with 100% camera-free privacy preservation.</p>
+          </div>
+
+          <div class="glass" style="min-width: 280px; max-width: 280px; padding: 28px; border-radius: var(--radius-lg); flex-shrink: 0;">
+            <span class="text-mono" style="font-size: 0.75rem; color: #FFF;">APPLICATION 03</span>
+            <h3 style="font-size: 1.25rem; margin: 12px 0 10px 0;">Perimeter Defense</h3>
+            <p style="font-size: 0.875rem; line-height: 1.6;">Discrimination between swaying trees or pets and human intruders in total darkness, heavy smoke, and rain.</p>
+          </div>
+
+          <div class="glass" style="min-width: 280px; max-width: 280px; padding: 28px; border-radius: var(--radius-lg); flex-shrink: 0;">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--green-soft);">APPLICATION 04</span>
+            <h3 style="font-size: 1.25rem; margin: 12px 0 10px 0;">Retail Footfall</h3>
+            <p style="font-size: 0.875rem; line-height: 1.6;">Dwell-time analytics, queue density, and customer path heatmaps without tracking facial identity or MAC addresses.</p>
+          </div>
+
+          <div class="glass" style="min-width: 280px; max-width: 280px; padding: 28px; border-radius: var(--radius-lg); flex-shrink: 0;">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--maroon-soft);">APPLICATION 05</span>
+            <h3 style="font-size: 1.25rem; margin: 12px 0 10px 0;">Classroom Occupancy</h3>
+            <p style="font-size: 0.875rem; line-height: 1.6;">Automated headcount estimation and ventilation regulation without camera surveillance anxiety.</p>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- SECTION 12: PROJECT CARD & NAVIGATION HUB -->
+      <section class="reveal" style="padding: 80px 0 120px 0;">
+        <div class="glass glass-solid" style="padding: 48px; border-radius: var(--radius-xl); text-align: center;">
+          <span class="badge badge-fused" style="margin-bottom: 16px;">EXPLORE THE COMPLETE CAPSTONE</span>
+          <h2 style="margin-bottom: 20px;">Ready to explore the simulation and technical details?</h2>
+          <p style="margin: 0 auto 36px auto; max-width: 54ch;">
+            Step into the full interactive lab, examine the hardware UART protocols, review the FreeRTOS code base, or inspect the viva defense questions.
+          </p>
+          <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
+            <a href="simulation.html" class="btn btn-primary">Open Simulation Lab &rarr;</a>
+            <a href="tech.html" class="btn btn-secondary">Tech &amp; Architecture</a>
+            <a href="working.html" class="btn btn-secondary">Working &amp; Demo</a>
+            <a href="thanks.html" class="btn btn-secondary">Viva &amp; Thanks</a>
+          </div>
+        </div>
+
+        <!-- Footer Nav -->
+        <div class="page-footer-nav">
+          <span class="text-mono" style="font-size: 0.8125rem; color: var(--text-tertiary);">PAGE 01 / 08 &bull; OVERVIEW</span>
+          <a href="ml.html" class="footer-nav-btn">
+            <span>Next: Machine Learning</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </a>
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p style="font-size: 0.8125rem; color: var(--text-tertiary); margin: 0 auto;">
+          Dual mmWave Radar Fusion System &bull; Engineering College Capstone Project &bull; PlatformIO / ESP32 &bull; Stitch Project ID: 8579979628087228837
+        </p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Shared Scripts (Classic execution order, no module) -->
+  <script src="assets/js/core.js"></script>
+  <script src="assets/js/background.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script src="assets/js/reveal.js"></script>
+  <script src="assets/js/hero.js"></script>
+  <script src="assets/js/diagrams.js"></script>
+
+  <script>
+    // Initialize wavelength diagram on home page
+    document.addEventListener('DOMContentLoaded', function () {
+      if (window.RFO && window.RFO.initWavelengthDiagram) {
+        window.RFO.initWavelengthDiagram('wavelength-canvas');
+      }
+      if (window.RFO && window.RFO.initWavePenetrationDiagram) {
+        window.RFO.initWavePenetrationDiagram('wave-penetration-canvas');
+      }
+      if (window.RFO && window.RFO.initGPIOMatrix) {
+        window.RFO.initGPIOMatrix();
+      }
+    });
+  </script>
+</body>
+</html>
+

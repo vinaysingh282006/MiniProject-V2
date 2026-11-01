@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dual mmWave Radar Fusion System: Machine Learning &amp; Micro-Doppler Classification</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Public+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "tertiary-fixed": "#e1e3e4",
+            "primary": "#ffb2b7",
+            "secondary-fixed-dim": "#88d7b0",
+            "on-tertiary": "#2e3132",
+            "on-secondary-fixed": "#002114",
+            "on-error": "#690005",
+            "secondary": "#88d7b0",
+            "on-secondary-container": "#8bdab3",
+            "on-background": "#e3e2e4",
+            "surface-container-high": "#292a2c",
+            "surface": "#121315",
+            "on-tertiary-container": "#c0c2c3",
+            "secondary-container": "#006143",
+            "on-tertiary-fixed": "#191c1d",
+            "on-surface-variant": "#dbc0c1",
+            "surface-container": "#1f2022",
+            "tertiary": "#c5c7c8",
+            "on-surface": "#e3e2e4",
+            "error": "#ffb4ab",
+            "surface-tint": "#ffb2b7",
+            "surface-bright": "#38393b",
+            "error-container": "#93000a",
+            "tertiary-fixed-dim": "#c5c7c8",
+            "on-primary-container": "#ffacb1",
+            "primary-fixed-dim": "#ffb2b7",
+            "on-tertiary-fixed-variant": "#454748",
+            "primary-fixed": "#ffdadb",
+            "on-error-container": "#ffdad6",
+            "on-primary": "#620e1e",
+            "surface-dim": "#121315",
+            "inverse-primary": "#9f3d49",
+            "tertiary-container": "#4d5051",
+            "inverse-surface": "#e3e2e4",
+            "on-secondary": "#003825",
+            "surface-container-lowest": "#0d0e10",
+            "secondary-fixed": "#a3f3cb",
+            "primary-container": "#8c2f3b",
+            "on-secondary-fixed-variant": "#005137",
+            "inverse-on-surface": "#303033",
+            "background": "#121315",
+            "outline": "#a38b8b",
+            "on-primary-fixed-variant": "#802633",
+            "on-primary-fixed": "#40000d",
+            "surface-container-low": "#1b1c1e",
+            "outline-variant": "#554243",
+            "surface-variant": "#343537",
+            "surface-container-highest": "#343537"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "headline": ["Inter", "sans-serif"],
+            "display": ["Inter", "sans-serif"],
+            "body": ["Inter", "sans-serif"],
+            "mono": ["JetBrains Mono", "monospace"],
+            "label": ["Public Sans", "sans-serif"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1;
+      letter-spacing: normal;
+      text-transform: none;
+      display: inline-block;
+      white-space: nowrap;
+      word-wrap: normal;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    /* Strict Design System Glass Surfaces (Apple-Style, NO borders) */
+    .glass-surface {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.015));
+      backdrop-filter: blur(24px) saturate(140%);
+      -webkit-backdrop-filter: blur(24px) saturate(140%);
+      border: 0px solid transparent !important;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      border-radius: 1.25rem;
+    }
+
+    .glass-surface-subtle {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01));
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 0px solid transparent !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      border-radius: 1rem;
+    }
+
+    /* Mathematical Formula Blocks */
+    .math-font {
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: -0.01em;
+    }
+  </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface font-body antialiased selection:bg-primary-container selection:text-primary min-h-screen">
+<!-- TopNavBar (Shared Component) -->
+<header class="fixed top-0 left-0 w-full z-50 flex items-center justify-between px-6 lg:px-12 py-3.5 max-w-7xl mx-auto bg-surface/80 backdrop-blur-md shadow-sm">
+<div class="flex items-center gap-3">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container inline-block"></span>
+<span class="font-headline text-base font-semibold tracking-tight text-on-surface">RadarFusion Capstone</span>
+</div>
+<!-- Navigation Links -->
+<nav class="hidden md:flex items-center gap-7">
+<a class="font-headline text-sm text-tertiary hover:text-on-surface transition-colors duration-150 font-normal" href="#overview">Overview</a>
+<a class="font-headline text-sm text-tertiary hover:text-on-surface transition-colors duration-150 font-normal" href="#tech-compare">Tech Compare</a>
+<a class="font-headline text-sm text-on-surface font-medium transition-colors duration-150" href="#fusion-logic">Fusion Logic</a>
+<a class="font-headline text-sm text-tertiary hover:text-on-surface transition-colors duration-150 font-normal" href="#hardware-power">Hardware &amp; Power</a>
+<a class="font-headline text-sm text-tertiary hover:text-on-surface transition-colors duration-150 font-normal" href="#telemetry">Telemetry</a>
+</nav>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-3">
+<a class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-headline font-medium text-tertiary hover:text-on-surface transition-colors duration-150" href="#github">
+<span class="material-symbols-outlined text-[17px]">terminal</span>
+<span>GitHub</span>
+</a>
+<a class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-surface-container-high text-xs font-headline font-semibold text-on-surface hover:bg-surface-variant transition-all duration-150 active:opacity-80" href="#specs">
+<span>Technical Spec</span>
+<span class="material-symbols-outlined text-[15px]">arrow_forward</span>
+</a>
+</div>
+</header>
+<!-- Main Container -->
+<main class="pt-24 lg:pt-28 pb-16 px-6 lg:px-12 max-w-7xl mx-auto space-y-24">
+<!-- HERO SECTION -->
+<section class="pt-6 lg:pt-10" id="overview">
+<div class="max-w-4xl space-y-6">
+<!-- Eyebrow Pill -->
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-low text-xs font-mono font-medium tracking-wider text-primary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+<span>RADAR SIGNAL PROCESSING &amp; TINYML INFERENCE</span>
+</div>
+<!-- Headline -->
+<h1 class="font-headline font-semibold text-4xl sm:text-5xl lg:text-6xl tracking-[-0.03em] text-on-surface leading-[1.08]">
+          Classifying human micro-motion with Edge TinyML.
+        </h1>
+<!-- Subtitle -->
+<p class="font-body text-tertiary text-base sm:text-lg leading-relaxed max-w-[62ch]">
+          Combining high-frequency micro-Doppler spectrogram signatures with lightweight temporal neural architectures. Real-time Xtensa dual-core inference via INT8 post-training quantization.
+        </p>
+</div>
+<!-- Quick KPI Strip (Minimal Glass Surface) -->
+<div class="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="glass-surface p-5 flex flex-col justify-between">
+<span class="text-xs font-mono text-tertiary uppercase tracking-wider">Validation Accuracy</span>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="text-3xl font-headline font-semibold text-on-surface tracking-tight">98.6%</span>
+<span class="text-xs font-mono text-secondary">±0.2% k-fold</span>
+</div>
+<span class="text-[11px] text-tertiary mt-1">4-class cross entropy</span>
+</div>
+<div class="glass-surface p-5 flex flex-col justify-between">
+<span class="text-xs font-mono text-tertiary uppercase tracking-wider">Inference Latency</span>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="text-3xl font-headline font-semibold text-on-surface tracking-tight">11.4 ms</span>
+<span class="text-xs font-mono text-primary">240 MHz LX6</span>
+</div>
+<span class="text-[11px] text-tertiary mt-1">FFT + 1D-CNN + GRU</span>
+</div>
+<div class="glass-surface p-5 flex flex-col justify-between">
+<span class="text-xs font-mono text-tertiary uppercase tracking-wider">Peak SRAM Footprint</span>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="text-3xl font-headline font-semibold text-on-surface tracking-tight">41.8 KB</span>
+<span class="text-xs font-mono text-secondary">8.0% Total SRAM</span>
+</div>
+<span class="text-[11px] text-tertiary mt-1">Circular ping-pong buffer</span>
+</div>
+<div class="glass-surface p-5 flex flex-col justify-between">
+<span class="text-xs font-mono text-tertiary uppercase tracking-wider">Flash Allocation</span>
+<div class="mt-3 flex items-baseline gap-2">
+<span class="text-3xl font-headline font-semibold text-on-surface tracking-tight">280 KB</span>
+<span class="text-xs font-mono text-on-tertiary-container">INT8 Weights</span>
+</div>
+<span class="text-[11px] text-tertiary mt-1">FlatBuffers schema</span>
+</div>
+</div>
+</section>
+<!-- SECTION 3: SPECTROGRAM FEATURE EXTRACTION -->
+<section class="space-y-8" id="spectrograms">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<div class="text-xs font-mono text-primary uppercase tracking-wider mb-2">Time-Frequency Phase Analysis</div>
+<h2 class="text-2xl sm:text-3xl font-headline font-semibold tracking-tight text-on-surface">Micro-Doppler Spectrogram Signatures</h2>
+</div>
+<p class="text-sm text-tertiary max-w-lg">
+          Raw FMCW de-chirped beat signals processed via Short-Time Fourier Transform (STFT) with a 128-sample Hanning window and 50% overlap, isolating velocity harmonics from anatomical motion.
+        </p>
+</div>
+<!-- 4 Spectrogram Cards Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+<!-- Card 1: Walking / Locomotion -->
+<div class="glass-surface p-5 flex flex-col justify-between space-y-4">
+<div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono text-primary bg-primary-container/20 px-2 py-0.5 rounded">CLASS 00</span>
+<span class="text-[11px] font-mono text-tertiary">24 GHz LD2452</span>
+</div>
+<h3 class="mt-3 font-headline font-medium text-base text-on-surface">Walking / Locomotion</h3>
+<p class="text-xs text-tertiary mt-1">Wide symmetric Doppler spreads (±2.5 m/s) with prominent limb cadence harmonics.</p>
+</div>
+<!-- Synthetic Minimal Visual Spectrogram Heatmap -->
+<div class="h-32 rounded-xl bg-surface-container-lowest p-2.5 flex flex-col justify-between">
+<div class="flex items-center justify-between text-[10px] font-mono text-tertiary">
+<span>+2.5 m/s</span>
+<span>128 Bins</span>
+</div>
+<!-- Heatmap frequency bars simulation -->
+<div class="grid grid-cols-16 gap-0.5 h-16 items-center">
+<div class="h-8 bg-primary-container/40 rounded-sm"></div>
+<div class="h-12 bg-primary-container/70 rounded-sm"></div>
+<div class="h-14 bg-primary rounded-sm"></div>
+<div class="h-10 bg-primary-container/80 rounded-sm"></div>
+<div class="h-6 bg-surface-container-high rounded-sm"></div>
+<div class="h-11 bg-primary-container/60 rounded-sm"></div>
+<div class="h-16 bg-primary rounded-sm"></div>
+<div class="h-13 bg-primary-container/90 rounded-sm"></div>
+<div class="h-7 bg-surface-container-high rounded-sm"></div>
+<div class="h-12 bg-primary-container/80 rounded-sm"></div>
+<div class="h-15 bg-primary rounded-sm"></div>
+<div class="h-9 bg-primary-container/50 rounded-sm"></div>
+<div class="h-6 bg-surface-container-high rounded-sm"></div>
+<div class="h-14 bg-primary-container/90 rounded-sm"></div>
+<div class="h-16 bg-primary rounded-sm"></div>
+<div class="h-8 bg-primary-container/60 rounded-sm"></div>
+</div>
+<div class="flex items-center justify-between text-[10px] font-mono text-tertiary">
+<span>-2.5 m/s</span>
+<span>t = 2.0s</span>
+</div>
+</div>
+<div class="pt-2 flex items-center justify-between text-xs font-mono text-tertiary">
+<span>Periodicity: 1.1 Hz</span>
+<span class="text-on-surface">P_d: 99.2%</span>
+</div>
+</div>
+<!-- Card 2: Seated Micro-Vitals -->
+<div class="glass-surface p-5 flex flex-col justify-between space-y-4">
+<div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono text-secondary bg-secondary-container/20 px-2 py-0.5 rounded">CLASS 01</span>
+<span class="text-[11px] font-mono text-tertiary">60 GHz LD6003D</span>
+</div>
+<h3 class="mt-3 font-headline font-medium text-base text-on-surface">Seated Micro-Vitals</h3>
+<p class="text-xs text-tertiary mt-1">Sub-Doppler modulation (0.15–0.35 Hz, ±0.04 m/s) isolating thoracic wall displacement.</p>
+</div>
+<!-- Synthetic Minimal Visual Spectrogram Heatmap -->
+<div class="h-32 rounded-xl bg-surface-container-lowest p-2.5 flex flex-col justify-between">
+<div class="flex items-center justify-between text-[10px] font-mono text-tertiary">
+<span>+0.05 m/s</span>
+<span>High-Res FFT</span>
+</div>
+<!-- Sub-Doppler ultra thin waveform -->
+<div class="grid grid-cols-16 gap-0.5 h-16 items-center">
+<div class="h-3 bg-surface-container-high rounded-sm"></div>
+<div class="h-4 bg-secondary-container/40 rounded-sm"></div>
+<div class="h-6 bg-secondary/80 rounded-sm"></div>
+<div class="h-7 bg-secondary rounded-sm"></div>
+<div class="h-6 bg-secondary/70 rounded-sm"></div>
+<div class="h-3 bg-surface-container-high rounded-sm"></div>
+<div class="h-2 bg-surface-container-low rounded-sm"></div>
+<div class="h-3 bg-secondary-container/30 rounded-sm"></div>
+<div class="h-5 bg-secondary/80 rounded-sm"></div>
+<div class="h-7 bg-secondary rounded-sm"></div>
+<div class="h-6 bg-secondary/80 rounded-sm"></div>
+<div class="h-4 bg-secondary-container/40 rounded-sm"></div>
+<div class="h-2 bg-surface-container-low rounded-sm"></div>
+<div class="h-3 bg-secondary-container/30 rounded-sm"></div>
+<div class="h-6 bg-secondary/70 rounded-sm"></div>
+<div class="h-7 bg-secondary rounded-sm"></div>
+</div>
+<div class="flex items-center justify-between text-[10px] font-mono text-tertiary">
+<span>-0.05 m/s</span>
+<span>18 Breaths/min</span>
+</div>
+</div>
+<div class="pt-2 flex items-center justify-between text-xs font-mono text-tertiary">
+<span>Displ: 0.8 mm</span>
+<span class="text-on-surface">P_d: 98.4%</span>
+</div>
+</div>
+<!-- Card 3: Fall Event Transient -->
+<div class="glass-surface p-5 flex flex-col justify-between space-y-4">
+<div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono text-primary bg-primary-container/20 px-2 py-0.5 rounded">CLASS 02</span>
+<span class="text-[11px] font-mono text-tertiary">Dual Fused</span>
+</div>
+<h3 class="mt-3 font-headline font-medium text-base text-on-surface">Fall Event Transient</h3>
+<p class="text-xs text-tertiary mt-1">High-energy sudden velocity delta spike (&gt;4.2 m/s) followed by immediate post-impact stillness.</p>
+</div>
+<!-- Sudden delta shock spike -->
+<div class="h-32 rounded-xl bg-surface-container-lowest p-2.5 flex flex-col justify-between">
+<div class="flex items-center justify-between text-[10px] font-mono text-tertiary">
+<span>+4.2 m/s</span>
+<span>Transient Spike</span>
+</div>
+<div class="grid grid-cols-16 gap-0.5 h-16 items-end">
+<div class="h-2 bg-surface-container-high rounded-sm"></div>
+<div class="h-3 bg-surface-container-high rounded-sm"></div>
+<div class="h-3 bg-surface-container-high rounded-sm"></div>
+<div class="h-5 bg-primary-container/50 rounded-sm"></div>
+<div class="h-10 bg-primary-container rounded-sm"></div>
+<div class="h-16 bg-primary rounded-sm"></div>
+<div class="h-14 bg-primary-container rounded-sm"></div>
+<div class="h-8 bg-primary-container/60 rounded-sm"></div>
+<div class="h-2 bg-surface-container-high rounded-sm"></div>
+<div class="h-1 bg-surface-container-low rounded-sm"></div>
+<div class="h-1 bg-surface-container-low rounded-sm"></div>
+<div class="h-1 bg-surface-container-low rounded-sm"></div>
+<div class="h-1 bg-surface-container-low rounded-sm"></div>
+<div class="h-1 bg-surface-container-low rounded-sm"></div>
+<div class="h-1 bg-surface-container-low rounded-sm"></div>
+<div class="h-1 bg-surface-container-low rounded-sm"></div>
+</div>
+<div class="flex items-center justify-between text-[10px] font-mono text-tertiary">
+<span>0 m/s</span>
+<span>Δt = 340ms</span>
+</div>
+</div>
+<div class="pt-2 flex items-center justify-between text-xs font-mono text-tertiary">
+<span>Spike: 4.8g Equiv</span>
+<span class="text-on-surface">P_d: 97.9%</span>
+</div>
+</div>
+<!-- Card 4: Mechanical Clutter -->
+<div class="glass-surface p-5 flex flex-col justify-between space-y-4">
+<div>
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono text-tertiary bg-surface-container-high px-2 py-0.5 rounded">CLASS 03</span>
+<span class="text-[11px] font-mono text-tertiary">Environmental</span>
+</div>
+<h3 class="mt-3 font-headline font-medium text-base text-on-surface">Mechanical Clutter</h3>
+<p class="text-xs text-tertiary mt-1">High-frequency rigid harmonic resonance spikes (Oscillating fan / blinds) without biological variance.</p>
+</div>
+<!-- Synthetic Static Periodic Spikes -->
+<div class="h-32 rounded-xl bg-surface-container-lowest p-2.5 flex flex-col justify-between">
+<div class="flex items-center justify-between text-[10px] font-mono text-tertiary">
+<span>±1.8 m/s</span>
+<span>Harmonics</span>
+</div>
+<div class="grid grid-cols-16 gap-0.5 h-16 items-center">
+<div class="h-12 bg-surface-container-highest rounded-sm"></div>
+<div class="h-2 bg-surface-container-low rounded-sm"></div>
+<div class="h-2 bg-surface-container-low rounded-sm"></div>
+<div class="h-12 bg-surface-container-highest rounded-sm"></div>
+<div class="h-2 bg-surface-container-low rounded-sm"></div>
+<div class="h-2 bg-surface-container-low rounded-sm"></div>
+<div class="h-12 bg-surface-container-highest rounded-sm"></div>
+<div class="h-2 bg-surface-container-low rounded-sm"></div>
+<div class="h-2 bg-surface-container-low rounded-sm"></div>
+<div class="h-12 bg-surface-container-highest rounded-sm"></div>
+<div class="h-2 bg-surface-container-low rounded-sm"></div>
+<div class="h-2 bg-surface-container-low rounded-sm"></div>
+<div class="h-12 bg-surface-container-highest rounded-sm"></div>
+<div class="h-2 bg-surface-container-low rounded-sm"></div>
+<div class="h-2 bg-surface-container-low rounded-sm"></div>
+<div class="h-12 bg-surface-container-highest rounded-sm"></div>
+</div>
+<div class="flex items-center justify-between text-[10px] font-mono text-tertiary">
+<span>Rigid phase</span>
+<span>f_osc = 14 Hz</span>
+</div>
+</div>
+<div class="pt-2 flex items-center justify-between text-xs font-mono text-tertiary">
+<span>Entropy: 0.12 (Low)</span>
+<span class="text-on-surface">Rejection: 99.4%</span>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 4: NEURAL NETWORK ARCHITECTURE PIPELINE -->
+<section class="space-y-8" id="fusion-logic">
+<div class="max-w-3xl space-y-2">
+<div class="text-xs font-mono text-secondary uppercase tracking-wider">Edge Inference Topology</div>
+<h2 class="text-2xl sm:text-3xl font-headline font-semibold tracking-tight text-on-surface">
+          Hybrid 1D-CNN + Bidirectional GRU Pipeline
+        </h2>
+<p class="text-sm text-tertiary">
+          Designed specifically to capture spatial Doppler spatial patterns along the frequency axis followed by non-linear temporal sequence modeling over sequential 64-frame observation windows.
+        </p>
+</div>
+<!-- Pipeline Steps (Card Chain) -->
+<div class="grid grid-cols-1 lg:grid-cols-5 gap-3.5">
+<!-- Stage 1 -->
+<div class="glass-surface p-5 flex flex-col justify-between">
+<div>
+<div class="text-[11px] font-mono text-primary font-medium">STAGE 01</div>
+<div class="font-headline font-medium text-sm text-on-surface mt-1">Input Spectrogram</div>
+<div class="mt-4 p-2.5 rounded-lg bg-surface-container-lowest font-mono text-xs text-tertiary space-y-1">
+<div>Dim: <span class="text-on-surface">128 × 64 × 1</span></div>
+<div>Rate: <span class="text-on-surface">20 FPS</span></div>
+<div>FMT: <span class="text-on-surface">INT8 Q7</span></div>
+</div>
+</div>
+<div class="text-[11px] text-tertiary mt-4">STFT Doppler bins aligned along 3.2s temporal window.</div>
+</div>
+<!-- Stage 2 -->
+<div class="glass-surface p-5 flex flex-col justify-between">
+<div>
+<div class="text-[11px] font-mono text-primary font-medium">STAGE 02</div>
+<div class="font-headline font-medium text-sm text-on-surface mt-1">1D-DS Convolutions</div>
+<div class="mt-4 p-2.5 rounded-lg bg-surface-container-lowest font-mono text-xs text-tertiary space-y-1">
+<div>Kernel: <span class="text-on-surface">K=5, S=2</span></div>
+<div>Filters: <span class="text-on-surface">32 → 64</span></div>
+<div>Act: <span class="text-on-surface">ReLU6</span></div>
+</div>
+</div>
+<div class="text-[11px] text-tertiary mt-4">Depthwise separable convolutions minimize MAC operations.</div>
+</div>
+<!-- Stage 3 -->
+<div class="glass-surface p-5 flex flex-col justify-between">
+<div>
+<div class="text-[11px] font-mono text-secondary font-medium">STAGE 03</div>
+<div class="font-headline font-medium text-sm text-on-surface mt-1">Norm &amp; Dropout</div>
+<div class="mt-4 p-2.5 rounded-lg bg-surface-container-lowest font-mono text-xs text-tertiary space-y-1">
+<div>Type: <span class="text-on-surface">BatchNorm1D</span></div>
+<div>Spatial Drop: <span class="text-on-surface">p = 0.20</span></div>
+<div>Folded: <span class="text-on-surface">At Export</span></div>
+</div>
+</div>
+<div class="text-[11px] text-tertiary mt-4">Fused with weights during TFLite post-training quantization.</div>
+</div>
+<!-- Stage 4 -->
+<div class="glass-surface p-5 flex flex-col justify-between">
+<div>
+<div class="text-[11px] font-mono text-secondary font-medium">STAGE 04</div>
+<div class="font-headline font-medium text-sm text-on-surface mt-1">Bidirectional GRU</div>
+<div class="mt-4 p-2.5 rounded-lg bg-surface-container-lowest font-mono text-xs text-tertiary space-y-1">
+<div>Hidden: <span class="text-on-surface">H = 48</span></div>
+<div>Gates: <span class="text-on-surface">Reset / Update</span></div>
+<div>State: <span class="text-on-surface">Ping-pong</span></div>
+</div>
+</div>
+<div class="text-[11px] text-tertiary mt-4">Recurrent state model tracks cadence harmonics across frames.</div>
+</div>
+<!-- Stage 5 -->
+<div class="glass-surface p-5 flex flex-col justify-between">
+<div>
+<div class="text-[11px] font-mono text-primary font-medium">STAGE 05</div>
+<div class="font-headline font-medium text-sm text-on-surface mt-1">Softmax Head</div>
+<div class="mt-4 p-2.5 rounded-lg bg-surface-container-lowest font-mono text-xs text-tertiary space-y-1">
+<div>Dense: <span class="text-on-surface">48 → 4</span></div>
+<div>Temp: <span class="text-on-surface">T = 1.0</span></div>
+<div>Output: <span class="text-on-surface">Confidence</span></div>
+</div>
+</div>
+<div class="text-[11px] text-tertiary mt-4">Discrete class probabilities fed directly to arbitration engine.</div>
+</div>
+</div>
+</section>
+<!-- SECTION 5: MATHEMATICAL FORMULATIONS & TRAINING PIPELINE -->
+<section class="space-y-8" id="math-pipeline">
+<div class="max-w-3xl space-y-2">
+<div class="text-xs font-mono text-primary uppercase tracking-wider">Formal Theoretical Foundations</div>
+<h2 class="text-2xl sm:text-3xl font-headline font-semibold tracking-tight text-on-surface">
+          Training Formulations &amp; Regularization
+        </h2>
+<p class="text-sm text-tertiary">
+          Mathematical optimization framework designed to mitigate transient class imbalance and ensure numerical stability during edge quantization.
+        </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+<!-- Math Card 1: Focal Loss Formulation -->
+<div class="glass-surface p-6 space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono text-primary">OBJECTIVE FUNCTION</span>
+<span class="text-[11px] font-mono text-tertiary">γ=2.0, α=0.25</span>
+</div>
+<h3 class="font-headline font-semibold text-base text-on-surface">Focal Cross-Entropy Loss</h3>
+<p class="text-xs text-tertiary leading-relaxed">
+            Suppresses gradient magnitude from abundant static/walking segments, focusing backpropagation on fleeting fall transitions.
+          </p>
+<div class="p-3.5 rounded-xl bg-surface-container-lowest text-xs math-font text-on-surface leading-loose">
+            L_FL(p_t) = -α_t · (1 - p_t)^γ · log(p_t)
+            <br/>
+<span class="text-tertiary text-[11px] mt-1 block">where p_t = p if y=1 else (1 - p)</span>
+</div>
+<div class="text-[11px] font-mono text-tertiary flex items-center justify-between pt-1">
+<span>Hard sample weight</span>
+<span class="text-secondary">+340% gradient bias</span>
+</div>
+</div>
+<!-- Math Card 2: Elastic Net Regularization -->
+<div class="glass-surface p-6 space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono text-secondary">SPARSITY PENALTY</span>
+<span class="text-[11px] font-mono text-tertiary">λ_1=1e-5, λ_2=1e-4</span>
+</div>
+<h3 class="font-headline font-semibold text-base text-on-surface">Elastic Net Regularization</h3>
+<p class="text-xs text-tertiary leading-relaxed">
+            Combines L1 Lasso penalty to enforce zero-weight pruning for edge compaction with L2 Ridge decay to bound gradient explosion.
+          </p>
+<div class="p-3.5 rounded-xl bg-surface-container-lowest text-xs math-font text-on-surface leading-loose">
+            R(W) = λ_1 ∑|w_ij| + 0.5·λ_2 ∑(w_ij)^2
+            <br/>
+<span class="text-tertiary text-[11px] mt-1 block">Prunes 26.4% near-zero weights</span>
+</div>
+<div class="text-[11px] font-mono text-tertiary flex items-center justify-between pt-1">
+<span>Sparsity achieved</span>
+<span class="text-on-surface">26.4% zero-coefficients</span>
+</div>
+</div>
+<!-- Math Card 3: Backpropagation Through Time (BPTT) -->
+<div class="glass-surface p-6 space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono text-primary">GRADIENT COMPUTATION</span>
+<span class="text-[11px] font-mono text-tertiary">T=64 Frames</span>
+</div>
+<h3 class="font-headline font-semibold text-base text-on-surface">Chain Rule DAG &amp; BPTT</h3>
+<p class="text-xs text-tertiary leading-relaxed">
+            Temporal gradient accumulation unrolled across Gated Recurrent Unit hidden states over sequential Doppler frames.
+          </p>
+<div class="p-3.5 rounded-xl bg-surface-container-lowest text-xs math-font text-on-surface leading-loose">
+            ∂L / ∂W_h = ∑_{t=1}^T (∂L_t / ∂h_t) · ∏_{k=2}^t (∂h_k / ∂h_{k-1})
+            <br/>
+<span class="text-tertiary text-[11px] mt-1 block">Norm-clipped threshold: ||g|| ≤ 1.0</span>
+</div>
+<div class="text-[11px] font-mono text-tertiary flex items-center justify-between pt-1">
+<span>Clip threshold</span>
+<span class="text-secondary">||g|| ≤ 1.0</span>
+</div>
+</div>
+<!-- Math Card 4: Hyperparameters & Optimization -->
+<div class="glass-surface p-6 space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono text-secondary">CONVERGENCE SCHEDULE</span>
+<span class="text-[11px] font-mono text-tertiary">Adam Optimizer</span>
+</div>
+<h3 class="font-headline font-semibold text-base text-on-surface">Cosine Annealing Schedule</h3>
+<p class="text-xs text-tertiary leading-relaxed">
+            Smooth cyclical learning rate decay without restarts, preventing premature local minima traps on high-frequency noise.
+          </p>
+<div class="p-3.5 rounded-xl bg-surface-container-lowest text-xs math-font text-on-surface leading-loose">
+            η_t = η_min + 0.5(η_max - η_min)(1 + cos(π·t / T_max))
+            <br/>
+<span class="text-tertiary text-[11px] mt-1 block">η_max=1e-3, η_min=1e-6, 120 Epochs</span>
+</div>
+<div class="text-[11px] font-mono text-tertiary flex items-center justify-between pt-1">
+<span>Mini-batch size</span>
+<span class="text-on-surface">32 Spectrograms</span>
+</div>
+</div>
+<!-- Math Card 5: Autoencoder Denoising PSNR -->
+<div class="glass-surface p-6 space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono text-primary">PRE-PROCESSING METRIC</span>
+<span class="text-[11px] font-mono text-tertiary">SNR Evaluation</span>
+</div>
+<h3 class="font-headline font-semibold text-base text-on-surface">Denoising PSNR Metric</h3>
+<p class="text-xs text-tertiary leading-relaxed">
+            Peak Signal-to-Noise Ratio evaluated on reconstructed FMCW chirps after spatial-temporal autoencoder phase filtering.
+          </p>
+<div class="p-3.5 rounded-xl bg-surface-container-lowest text-xs math-font text-on-surface leading-loose">
+            PSNR = 10 · log_10( MAX_I^2 / MSE )
+            <br/>
+<span class="text-tertiary text-[11px] mt-1 block">Empirical Value: 28.42 dB (Clutter filtered)</span>
+</div>
+<div class="text-[11px] font-mono text-tertiary flex items-center justify-between pt-1">
+<span>Noise floor rejection</span>
+<span class="text-secondary">-18.7 dB suppression</span>
+</div>
+</div>
+<!-- Math Card 6: Quantization Mapping -->
+<div class="glass-surface p-6 space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono text-secondary">INT8 ARITHMETIC</span>
+<span class="text-[11px] font-mono text-tertiary">Affine Transform</span>
+</div>
+<h3 class="font-headline font-semibold text-base text-on-surface">Symmetric Uniform Quantization</h3>
+<p class="text-xs text-tertiary leading-relaxed">
+            Mapping real FP32 continuous weight tensors to signed 8-bit integers with zero offset for Xtensa SIMD instruction speedup.
+          </p>
+<div class="p-3.5 rounded-xl bg-surface-container-lowest text-xs math-font text-on-surface leading-loose">
+            q = clamp( ⌊ r / S ⌉ + Z, -128, 127 )
+            <br/>
+<span class="text-tertiary text-[11px] mt-1 block">S = (r_max - r_min) / 255, Z = 0</span>
+</div>
+<div class="text-[11px] font-mono text-tertiary flex items-center justify-between pt-1">
+<span>Quantization error MSE</span>
+<span class="text-on-surface">2.14 × 10^-5</span>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 6: MODEL PERFORMANCE METRICS & BENCHMARKS -->
+<section class="space-y-8" id="benchmarks">
+<div class="max-w-3xl space-y-2">
+<div class="text-xs font-mono text-secondary uppercase tracking-wider">Evaluation &amp; Latency Profiles</div>
+<h2 class="text-2xl sm:text-3xl font-headline font-semibold tracking-tight text-on-surface">
+          Empirical Validation &amp; On-Chip Benchmarks
+        </h2>
+<p class="text-sm text-tertiary">
+          Assessed on 2,400 curated human motion trials across multi-clutter lab environments. Runtime profiled using Xtensa hardware cycle registers.
+        </p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- 4x4 Confusion Matrix (7 cols) -->
+<div class="lg:col-span-7 glass-surface p-6 space-y-5">
+<div class="flex items-center justify-between">
+<h3 class="font-headline font-semibold text-base text-on-surface">4×4 Normalized Confusion Matrix</h3>
+<span class="text-xs font-mono text-secondary">N = 2,400 samples</span>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left text-xs font-mono">
+<thead>
+<tr class="text-tertiary border-b border-white/5">
+<th class="py-2.5 pr-2 font-normal">True \ Pred</th>
+<th class="py-2.5 px-3 text-center font-normal">Walking</th>
+<th class="py-2.5 px-3 text-center font-normal">Seated Vitals</th>
+<th class="py-2.5 px-3 text-center font-normal">Fall Event</th>
+<th class="py-2.5 px-3 text-center font-normal">Clutter</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-white/5">
+<tr>
+<td class="py-3 pr-2 text-on-surface font-medium">Walking</td>
+<td class="py-3 px-3 text-center bg-primary-container/20 text-primary font-semibold">99.1%</td>
+<td class="py-3 px-3 text-center text-tertiary">0.2%</td>
+<td class="py-3 px-3 text-center text-tertiary">0.5%</td>
+<td class="py-3 px-3 text-center text-tertiary">0.2%</td>
+</tr>
+<tr>
+<td class="py-3 pr-2 text-on-surface font-medium">Seated Vitals</td>
+<td class="py-3 px-3 text-center text-tertiary">0.4%</td>
+<td class="py-3 px-3 text-center bg-secondary-container/30 text-secondary font-semibold">98.4%</td>
+<td class="py-3 px-3 text-center text-tertiary">0.1%</td>
+<td class="py-3 px-3 text-center text-tertiary">1.1%</td>
+</tr>
+<tr>
+<td class="py-3 pr-2 text-on-surface font-medium">Fall Event</td>
+<td class="py-3 px-3 text-center text-tertiary">1.2%</td>
+<td class="py-3 px-3 text-center text-tertiary">0.0%</td>
+<td class="py-3 px-3 text-center bg-primary-container/30 text-primary font-semibold">97.8%</td>
+<td class="py-3 px-3 text-center text-tertiary">1.0%</td>
+</tr>
+<tr>
+<td class="py-3 pr-2 text-on-surface font-medium">Clutter</td>
+<td class="py-3 px-3 text-center text-tertiary">0.3%</td>
+<td class="py-3 px-3 text-center text-tertiary">0.6%</td>
+<td class="py-3 px-3 text-center text-tertiary">0.1%</td>
+<td class="py-3 px-3 text-center bg-surface-container-high text-on-surface font-semibold">99.0%</td>
+</tr>
+</tbody>
+</table>
+</div>
+<!-- Overall Summary Metrics -->
+<div class="grid grid-cols-3 gap-3 pt-3 border-t border-white/5">
+<div class="p-3 rounded-lg bg-surface-container-lowest">
+<div class="text-[10px] font-mono text-tertiary">PRECISION (MACRO)</div>
+<div class="text-lg font-headline font-semibold text-on-surface mt-0.5">98.9%</div>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-lowest">
+<div class="text-[10px] font-mono text-tertiary">RECALL (MACRO)</div>
+<div class="text-lg font-headline font-semibold text-on-surface mt-0.5">98.3%</div>
+</div>
+<div class="p-3 rounded-lg bg-surface-container-lowest">
+<div class="text-[10px] font-mono text-tertiary">F1-SCORE</div>
+<div class="text-lg font-headline font-semibold text-secondary mt-0.5">98.6%</div>
+</div>
+</div>
+</div>
+<!-- Latency Breakdown On Hardware (5 cols) -->
+<div class="lg:col-span-5 glass-surface p-6 space-y-5">
+<div class="flex items-center justify-between">
+<h3 class="font-headline font-semibold text-base text-on-surface">ESP32 Xtensa Latency Budget</h3>
+<span class="text-xs font-mono text-primary">Total: 11.4 ms</span>
+</div>
+<div class="space-y-3.5">
+<!-- Stage Item 1 -->
+<div>
+<div class="flex items-center justify-between text-xs font-mono mb-1.5">
+<span class="text-on-surface">Pre-processing 128-pt FFT</span>
+<span class="text-tertiary">3.2 ms (28.1%)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-primary-container" style="width: 28.1%"></div>
+</div>
+</div>
+<!-- Stage Item 2 -->
+<div>
+<div class="flex items-center justify-between text-xs font-mono mb-1.5">
+<span class="text-on-surface">1D-DS Convolutional Layers</span>
+<span class="text-tertiary">4.8 ms (42.1%)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-primary" style="width: 42.1%"></div>
+</div>
+</div>
+<!-- Stage Item 3 -->
+<div>
+<div class="flex items-center justify-between text-xs font-mono mb-1.5">
+<span class="text-on-surface">Bidirectional GRU Recurrence</span>
+<span class="text-tertiary">2.9 ms (25.4%)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-secondary" style="width: 25.4%"></div>
+</div>
+</div>
+<!-- Stage Item 4 -->
+<div>
+<div class="flex items-center justify-between text-xs font-mono mb-1.5">
+<span class="text-on-surface">Dense Softmax Projection</span>
+<span class="text-tertiary">0.5 ms (4.4%)</span>
+</div>
+<div class="w-full h-1.5 rounded-full bg-surface-container-high overflow-hidden">
+<div class="h-full bg-tertiary" style="width: 4.4%"></div>
+</div>
+</div>
+</div>
+<div class="mt-4 p-3.5 rounded-xl bg-surface-container-lowest text-xs font-mono space-y-1.5">
+<div class="flex justify-between text-tertiary">
+<span>Clock Frequency:</span>
+<span class="text-on-surface">240 MHz (Core 1 ML Dedicated)</span>
+</div>
+<div class="flex justify-between text-tertiary">
+<span>Frame Budget:</span>
+<span class="text-on-surface">50.0 ms (20 Hz Rate)</span>
+</div>
+<div class="flex justify-between text-tertiary">
+<span>CPU Headroom:</span>
+<span class="text-secondary font-semibold">77.2% Idle / Telemetry Margin</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 7: POST-TRAINING QUANTIZATION (FP32 -> INT8) -->
+<section class="space-y-8" id="quantization">
+<div class="max-w-3xl space-y-2">
+<div class="text-xs font-mono text-primary uppercase tracking-wider">Edge TinyML Compaction</div>
+<h2 class="text-2xl sm:text-3xl font-headline font-semibold tracking-tight text-on-surface">
+          Post-Training Quantization (FP32 → INT8)
+        </h2>
+<p class="text-sm text-tertiary">
+          Full integer quantization with representative radar spectrogram calibration dataset converts floating-point weights and activation buffers to uniform 8-bit precision.
+        </p>
+</div>
+<!-- Comparative Table & Resource Comparison Cards -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+<div class="glass-surface p-6 space-y-4">
+<div class="text-xs font-mono text-tertiary">PRECISION ARTIFACTS</div>
+<h3 class="font-headline font-semibold text-base text-on-surface">Full Precision FP32</h3>
+<ul class="space-y-3 font-mono text-xs text-tertiary">
+<li class="flex justify-between">
+<span>Flash Model Size:</span>
+<span class="text-on-surface font-semibold">1,120 KB</span>
+</li>
+<li class="flex justify-between">
+<span>Peak SRAM Usage:</span>
+<span class="text-on-surface font-semibold">168.0 KB</span>
+</li>
+<li class="flex justify-between">
+<span>Validation Acc:</span>
+<span class="text-on-surface font-semibold">98.9%</span>
+</li>
+<li class="flex justify-between">
+<span>Inference Time:</span>
+<span class="text-on-surface font-semibold">43.8 ms</span>
+</li>
+<li class="flex justify-between">
+<span>FPU Instruction:</span>
+<span class="text-primary font-semibold">Single-core Bottleneck</span>
+</li>
+</ul>
+</div>
+<div class="glass-surface p-6 space-y-4">
+<div class="text-xs font-mono text-secondary">DEPLOYED TARGET</div>
+<h3 class="font-headline font-semibold text-base text-on-surface">Quantized INT8 (TFLite)</h3>
+<ul class="space-y-3 font-mono text-xs text-tertiary">
+<li class="flex justify-between">
+<span>Flash Model Size:</span>
+<span class="text-secondary font-semibold">280 KB (-75.0%)</span>
+</li>
+<li class="flex justify-between">
+<span>Peak SRAM Usage:</span>
+<span class="text-secondary font-semibold">41.8 KB (-75.1%)</span>
+</li>
+<li class="flex justify-between">
+<span>Validation Acc:</span>
+<span class="text-on-surface font-semibold">98.6% (-0.3%)</span>
+</li>
+<li class="flex justify-between">
+<span>Inference Time:</span>
+<span class="text-secondary font-semibold">11.4 ms (3.84x Speedup)</span>
+</li>
+<li class="flex justify-between">
+<span>SIMD Acceleration:</span>
+<span class="text-secondary font-semibold">Xtensa DSP Lib ASM</span>
+</li>
+</ul>
+</div>
+<div class="glass-surface p-6 space-y-4">
+<div class="text-xs font-mono text-primary">QUANTIZATION MECHANICS</div>
+<h3 class="font-headline font-semibold text-base text-on-surface">Calibration &amp; Clipping</h3>
+<p class="text-xs text-tertiary leading-relaxed">
+            Per-channel weight scales s_w and per-tensor activation ranges calculated using Kullback-Leibler (KL) divergence minimization over 300 representative test frames.
+          </p>
+<div class="p-3 rounded-lg bg-surface-container-lowest font-mono text-xs space-y-1">
+<div class="text-tertiary">Weight Range: <span class="text-on-surface">[-1.42, +1.38]</span></div>
+<div class="text-tertiary">Scale Factor s_w: <span class="text-secondary">0.01098</span></div>
+<div class="text-tertiary">Zero-point offset: <span class="text-on-surface">Z = 0 (Symmetric)</span></div>
+</div>
+<div class="text-[11px] font-mono text-tertiary">
+            Directly executes via ESP-NN hardware assembly kernels.
+          </div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="w-full py-12 px-6 lg:px-12 max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 bg-surface-container-lowest">
+<div class="font-headline text-sm font-semibold text-on-surface">
+      RadarFusion Capstone
+    </div>
+<div class="flex flex-wrap items-center justify-center gap-6 font-body text-xs text-tertiary">
+<a class="hover:text-on-surface transition-colors duration-150" href="#documentation">Documentation</a>
+<a class="hover:text-on-surface transition-colors duration-150" href="#pinouts">Pinout Diagrams</a>
+<a class="hover:text-on-surface transition-colors duration-150" href="#power">Power Budget</a>
+<a class="hover:text-on-surface transition-colors duration-150" href="#math">Algorithm Math</a>
+<a class="hover:text-on-surface transition-colors duration-150" href="#advisory">Faculty Advisory</a>
+</div>
+<div class="font-body text-xs text-tertiary text-center md:text-right">
+      © 2025 Dual mmWave Radar Fusion System · HLK-LD2452 &amp; HLK-LD6003D Capstone Initiative
+    </div>
+</footer>
+</body></html>

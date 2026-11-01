@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engineering Roadmap — Dual mmWave Radar Fusion System</title>
+  <meta name="description" content="Development phases from prototype proof-of-concept to production commercial appliance.">
+
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Theme Stylesheets -->
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/glass.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+</head>
+<body data-bg="horizon">
+
+  <div id="scroll-progress"></div>
+  <canvas id="bg-canvas"></canvas>
+  <div class="vignette-overlay"></div>
+
+  <div class="page-wrapper page-fade">
+
+    <!-- Floating Navigation Bar -->
+    <header class="floating-nav glass">
+      <div class="nav-brand">
+        <span class="brand-indicator"></span>
+        <span>Radar Fusion OS</span>
+      </div>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="ml.html" class="nav-link">Machine Learning</a></li>
+          <li><a href="simulation.html" class="nav-link">Simulation</a></li>
+          <li><a href="tech.html" class="nav-link">Tech & Architecture</a></li>
+          <li><a href="working.html" class="nav-link">Working & Demo</a></li>
+          <li><a href="upgrades.html" class="nav-link">Upgrades</a></li>
+          <li><a href="roadmap.html" class="nav-link active">Roadmap</a></li>
+          <li><a href="thanks.html" class="nav-link">Viva & Thanks</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="simulation.html" class="btn btn-primary btn-sm">Try Lab</a>
+        <button class="nav-hamburger" aria-label="Toggle Navigation Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile Drawer -->
+    <div class="mobile-nav-drawer glass-solid">
+      <a href="index.html" class="nav-link">1. Overview</a>
+      <a href="ml.html" class="nav-link">2. Machine Learning</a>
+      <a href="simulation.html" class="nav-link">3. Simulation Lab</a>
+      <a href="tech.html" class="nav-link">4. Tech & Architecture</a>
+      <a href="working.html" class="nav-link">5. Working & Demo</a>
+      <a href="upgrades.html" class="nav-link">6. Future Upgrades</a>
+      <a href="roadmap.html" class="nav-link active">7. Project Roadmap</a>
+      <a href="thanks.html" class="nav-link">8. Viva & Thanks</a>
+    </div>
+
+    <main class="container" style="padding-top: 130px; padding-bottom: 80px;">
+
+      <!-- Header Intro -->
+      <section style="margin-bottom: 48px;">
+        <span class="badge badge-fused" style="margin-bottom: 12px;">PAGE 07 / 08</span>
+        <h1 style="margin-bottom: 16px;">Engineering roadmap &amp; phase milestones.</h1>
+        <p>A rigorous phase-gate development timeline tracking core prototype validation through multi-node mesh production.</p>
+      </section>
+
+      <!-- OVERALL PROGRESS SUMMARY -->
+      <section class="reveal" style="margin-bottom: 64px;">
+        <div class="glass glass-solid" style="padding: 32px; border-radius: var(--radius-xl);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">MILESTONE COMPLETION</span>
+              <h2 style="font-size: 1.5rem; margin-top: 4px;">Overall Capstone Progress: 72%</h2>
+            </div>
+            <span class="badge badge-green">PHASE 1 ACTIVE (FIELD TESTS)</span>
+          </div>
+
+          <!-- Progress Bar -->
+          <div style="width: 100%; height: 12px; border-radius: 6px; background: rgba(255,255,255,0.06); overflow: hidden; margin-bottom: 24px;">
+            <div style="width: 72%; height: 100%; background: linear-gradient(90deg, var(--maroon-main), var(--green-main));"></div>
+          </div>
+
+          <!-- Gantt Summary Table -->
+          <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.8125rem;">
+              <thead>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); color: var(--text-tertiary);">
+                  <th style="padding: 8px 12px; text-align: left;">PHASE</th>
+                  <th style="padding: 8px 12px; text-align: left;">TARGET FOCUS</th>
+                  <th style="padding: 8px 12px; text-align: left;">TIMELINE</th>
+                  <th style="padding: 8px 12px; text-align: left;">STATUS</th>
+                </tr>
+              </thead>
+              <tbody style="color: var(--text-secondary);">
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                  <td style="padding: 10px 12px; color: #FFF; font-weight: 600;">Phase 0</td>
+                  <td style="padding: 10px 12px;">Hardware breadboard, dual UART drivers, SPI TFT UI</td>
+                  <td style="padding: 10px 12px;">Q1 2026</td>
+                  <td style="padding: 10px 12px;"><span class="badge badge-green">DONE</span></td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                  <td style="padding: 10px 12px; color: #FFF; font-weight: 600;">Phase 1</td>
+                  <td style="padding: 10px 12px;">Unified web console, threshold calibration, field tests</td>
+                  <td style="padding: 10px 12px;">Q2 2026 (Now)</td>
+                  <td style="padding: 10px 12px;"><span class="badge badge-fused">IN PROGRESS</span></td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                  <td style="padding: 10px 12px; color: #FFF; font-weight: 600;">Phase 2</td>
+                  <td style="padding: 10px 12px;">Extended Kalman Filter + Hungarian tracker, MicroSD</td>
+                  <td style="padding: 10px 12px;">Q3 2026</td>
+                  <td style="padding: 10px 12px;"><span class="badge badge-maroon">PLANNED</span></td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                  <td style="padding: 10px 12px; color: #FFF; font-weight: 600;">Phase 3</td>
+                  <td style="padding: 10px 12px;">MQTT Home Assistant auto-discovery, PWA app, OTA</td>
+                  <td style="padding: 10px 12px;">Q4 2026</td>
+                  <td style="padding: 10px 12px;"><span class="badge badge-maroon">PLANNED</span></td>
+                </tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                  <td style="padding: 10px 12px; color: #FFF; font-weight: 600;">Phase 4</td>
+                  <td style="padding: 10px 12px;">TinyML activity classification, vitals &amp; fall detection</td>
+                  <td style="padding: 10px 12px;">Q1 2027</td>
+                  <td style="padding: 10px 12px;"><span class="badge badge-maroon">RESEARCH</span></td>
+                </tr>
+                <tr>
+                  <td style="padding: 10px 12px; color: #FFF; font-weight: 600;">Phase 5</td>
+                  <td style="padding: 10px 12px;">ESP-NOW spatial mesh, custom 4-layer PCB enclosure</td>
+                  <td style="padding: 10px 12px;">Q2 2027</td>
+                  <td style="padding: 10px 12px;"><span class="badge badge-maroon">RESEARCH</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- VERTICAL TIMELINE -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div style="display: flex; flex-direction: column; gap: 32px; position: relative;">
+          
+          <!-- Phase 0 -->
+          <div class="glass" style="padding: 32px; border-radius: var(--radius-xl); border-left: 4px solid var(--green-main) !important;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span class="text-mono" style="color: var(--green-soft); font-weight: 600;">PHASE 0 &bull; PROTOTYPE FOUNDATION</span>
+              <span class="badge badge-green">COMPLETED</span>
+            </div>
+            <h3 style="margin-bottom: 12px; color: #FFF;">Hardware Breadboard &amp; Dual UART Synchronization</h3>
+            <p style="margin-bottom: 18px;">
+              Validated hardware communication on PlatformIO. Wired HLK-LD2452 to UART1 (GPIO16/17) and HLK-LD6003D to UART0 remap (GPIO25/26). Implemented ILI9488 SPI landscape display with touch buttons.
+            </p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; font-family: var(--font-mono); font-size: 0.75rem;">
+              <span class="badge badge-fused">&check; 30-Byte LD2452 Parser</span>
+              <span class="badge badge-fused">&check; ILI9488 TFT SPI Driver</span>
+              <span class="badge badge-fused">&check; 0.50m Euclidean Gating</span>
+              <span class="badge badge-fused">&check; WebSocket Server</span>
+            </div>
+          </div>
+
+          <!-- Phase 1 -->
+          <div class="glass glass-solid" style="padding: 32px; border-radius: var(--radius-xl); border-left: 4px solid var(--maroon-main) !important;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span class="text-mono" style="color: var(--maroon-soft); font-weight: 600;">PHASE 1 &bull; CURRENT FOCUS (NOW)</span>
+              <span class="badge badge-fused">ACTIVE IMPLEMENTATION</span>
+            </div>
+            <h3 style="margin-bottom: 12px; color: #FFF;">Unified Web Console, Calibration &amp; Field Tests</h3>
+            <p style="margin-bottom: 18px;">
+              Building the luxury standalone 7-page presentation site and in-browser simulation lab. Running empirical spatial accuracy benchmarks against optical ground truth in college laboratories.
+            </p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; font-family: var(--font-mono); font-size: 0.75rem;">
+              <span class="badge badge-green">&check; 7-Page Website Standalone</span>
+              <span class="badge badge-green">&check; Interactive Simulation Lab</span>
+              <span class="badge badge-fused">&bull; Field Multipath Calibration</span>
+              <span class="badge badge-fused">&bull; Final Viva Presentation Dossier</span>
+            </div>
+          </div>
+
+          <!-- Phase 2 -->
+          <div class="glass" style="padding: 32px; border-radius: var(--radius-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span class="text-mono" style="color: var(--text-tertiary); font-weight: 600;">PHASE 2 &bull; ADVANCED ESTIMATION</span>
+              <span class="badge badge-maroon">UPCOMING (Q3 2026)</span>
+            </div>
+            <h3 style="margin-bottom: 12px; color: #FFF;">Extended Kalman Filtering &amp; MicroSD Telemetry</h3>
+            <p style="margin-bottom: 18px;">
+              Porting state-space Kalman prediction to Core 1 to track velocity derivatives. Replacing greedy nearest-neighbor with optimal Hungarian bipartite matching. Logging raw datasets onto MicroSD for offline verification.
+            </p>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; font-family: var(--font-mono); font-size: 0.75rem;">
+              <span class="badge">&bull; 4-State Kalman [X, Y, Vx, Vy]</span>
+              <span class="badge">&bull; Hungarian O(N^3) Matrix Matching</span>
+              <span class="badge">&bull; SD_MMC SPI Logging Buffer</span>
+            </div>
+          </div>
+
+          <!-- Phase 3 -->
+          <div class="glass" style="padding: 32px; border-radius: var(--radius-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span class="text-mono" style="color: var(--text-tertiary); font-weight: 600;">PHASE 3 &bull; ECOSYSTEM INTEGRATION</span>
+              <span class="badge badge-maroon">Q4 2026</span>
+            </div>
+            <h3 style="margin-bottom: 12px; color: #FFF;">Home Assistant MQTT, PWA Mobile &amp; Dual-Boot OTA</h3>
+            <p style="margin-bottom: 18px;">
+              Seamless integration with modern smart home controllers. Over-The-Air wireless firmware flashing and progressive web application installation on iOS and Android.
+            </p>
+          </div>
+
+          <!-- Phase 4 & 5 -->
+          <div class="glass" style="padding: 32px; border-radius: var(--radius-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span class="text-mono" style="color: var(--text-tertiary); font-weight: 600;">PHASES 4 &amp; 5 &bull; COMMERCIAL PRODUCT</span>
+              <span class="badge badge-maroon">2027 HORIZON</span>
+            </div>
+            <h3 style="margin-bottom: 12px; color: #FFF;">Edge TinyML, Non-Contact Vitals &amp; Custom PCB Mesh</h3>
+            <p style="margin-bottom: 18px;">
+              Quantized neural networks on MCU for fall detection and gesture recognition. Fabrication of a dedicated 4-layer surface-mount PCB with injection-molded wall mounting enclosure and ESP-NOW mesh networking.
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- Footer Nav -->
+      <div class="page-footer-nav">
+        <a href="upgrades.html" class="footer-nav-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          <span>Prev: Future Upgrades</span>
+        </a>
+        <span class="text-mono" style="font-size: 0.8125rem; color: var(--text-tertiary);">PAGE 07 / 08 &bull; ROADMAP</span>
+        <a href="thanks.html" class="footer-nav-btn">
+          <span>Next: Viva &amp; Thanks</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p style="font-size: 0.8125rem; color: var(--text-tertiary); margin: 0 auto;">
+          Dual mmWave Radar Fusion System &bull; Engineering College Capstone Project &bull; PlatformIO / ESP32
+        </p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Shared Scripts -->
+  <script src="assets/js/core.js"></script>
+  <script src="assets/js/background.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script src="assets/js/reveal.js"></script>
+</body>
+</html>
+

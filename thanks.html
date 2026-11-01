@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Viva Defense & Thanks — Dual mmWave Radar Fusion System</title>
+  <meta name="description" content="Capstone project recap, acknowledgements, and viva voce defense questions on FMCW radar, ESP32 GPIO Matrix, and multi-sensor fusion.">
+
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Theme Stylesheets -->
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/glass.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+</head>
+<body data-bg="settle">
+
+  <div id="scroll-progress"></div>
+  <canvas id="bg-canvas"></canvas>
+  <div class="vignette-overlay"></div>
+
+  <div class="page-wrapper page-fade">
+
+    <!-- Floating Navigation Bar -->
+    <header class="floating-nav glass">
+      <div class="nav-brand">
+        <span class="brand-indicator"></span>
+        <span>Radar Fusion OS</span>
+      </div>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="ml.html" class="nav-link">Machine Learning</a></li>
+          <li><a href="simulation.html" class="nav-link">Simulation</a></li>
+          <li><a href="tech.html" class="nav-link">Tech & Architecture</a></li>
+          <li><a href="working.html" class="nav-link">Working & Demo</a></li>
+          <li><a href="upgrades.html" class="nav-link">Upgrades</a></li>
+          <li><a href="roadmap.html" class="nav-link">Roadmap</a></li>
+          <li><a href="thanks.html" class="nav-link active">Viva & Thanks</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="simulation.html" class="btn btn-primary btn-sm">Try Lab</a>
+        <button class="nav-hamburger" aria-label="Toggle Navigation Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile Drawer -->
+    <div class="mobile-nav-drawer glass-solid">
+      <a href="index.html" class="nav-link">1. Overview</a>
+      <a href="ml.html" class="nav-link">2. Machine Learning</a>
+      <a href="simulation.html" class="nav-link">3. Simulation Lab</a>
+      <a href="tech.html" class="nav-link">4. Tech & Architecture</a>
+      <a href="working.html" class="nav-link">5. Working & Demo</a>
+      <a href="upgrades.html" class="nav-link">6. Future Upgrades</a>
+      <a href="roadmap.html" class="nav-link">7. Project Roadmap</a>
+      <a href="thanks.html" class="nav-link active">8. Viva & Thanks</a>
+    </div>
+
+    <main class="container" style="padding-top: 140px; padding-bottom: 80px;">
+
+      <!-- HERO: CALM FINALE -->
+      <section class="reveal" style="text-align: center; margin-bottom: 64px;">
+        <span class="badge badge-fused" style="margin-bottom: 16px;">CAPSTONE PROJECT FINALE</span>
+        <h1 style="font-size: clamp(2.5rem, 6vw, 4.2rem); margin-bottom: 20px;">Thank You.</h1>
+        <p style="margin: 0 auto 36px auto; max-width: 54ch; font-size: 1.15rem;">
+          "Dual mmWave Radar Fusion System (HLK-LD2452 24 GHz + HLK-LD6003D 60 GHz)" &bull; Engineering College Capstone Project Defense.
+        </p>
+
+        <!-- 3-Number Project Recap -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; max-width: 820px; margin: 0 auto 48px auto;">
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-lg);">
+            <div class="text-mono" style="font-size: 2.2rem; font-weight: 600; color: #FFF;">2 Fused</div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 6px;">24G + 60G Transducers</div>
+          </div>
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-lg);">
+            <div class="text-mono" style="font-size: 2.2rem; font-weight: 600; color: var(--green-soft);">100 ms</div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 6px;">Deterministic Loop Rate</div>
+          </div>
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-lg);">
+            <div class="text-mono" style="font-size: 2.2rem; font-weight: 600; color: #FFF;">99.4 %</div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 6px;">Target Lock Accuracy</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: ACKNOWLEDGEMENTS (EDITABLE PLACEHOLDERS) -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass glass-solid" style="padding: 36px; border-radius: var(--radius-xl);">
+          <span class="badge badge-green" style="margin-bottom: 8px;">ACKNOWLEDGEMENTS</span>
+          <h2 style="margin-bottom: 24px;">Project Mentorship &amp; Collaborators</h2>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+            <div class="glass-subtle" style="padding: 20px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--green-soft);">PROJECT GUIDE &amp; ADVISOR</span>
+              <h3 style="font-size: 1.15rem; color: #FFF; margin: 8px 0 6px 0;">[Faculty Guide Name]</h3>
+              <p style="font-size: 0.8125rem;">Department of Electronics &amp; Communication Engineering &bull; [Your College Name]</p>
+            </div>
+
+            <div class="glass-subtle" style="padding: 20px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--maroon-soft);">CAPSTONE TEAM MEMBERS</span>
+              <h3 style="font-size: 1.15rem; color: #FFF; margin: 8px 0 6px 0;">[Student 1], [Student 2], [Student 3]</h3>
+              <p style="font-size: 0.8125rem;">Senior Capstone Engineering Batch &bull; ECE / Embedded Systems</p>
+            </div>
+
+            <div class="glass-subtle" style="padding: 20px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">HARDWARE &amp; TOOLS</span>
+              <h3 style="font-size: 1.15rem; color: #FFF; margin: 8px 0 6px 0;">Espressif Systems &amp; Hi-Link</h3>
+              <p style="font-size: 0.8125rem;">ESP32-WROOM-32E, PlatformIO, FreeRTOS, and Google Stitch design system.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: VIVA VOCE DEFENSE QUESTIONS ACCORDION -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <span class="badge badge-maroon" style="margin-bottom: 8px;">TECHNICAL VIVA DEFENSE</span>
+        <h2 style="margin-bottom: 24px;">Comprehensive Viva Examination Q&amp;A</h2>
+
+        <div class="accordion">
+          
+          <div class="accordion-item glass">
+            <button class="accordion-header">
+              <span>Q1. Why does Passive Infrared (PIR) fail on stationary people, and how does FMCW radar solve this?</span>
+              <svg class="accordion-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="accordion-content">
+              <strong>Answer:</strong> PIR sensors rely on differential pyroelectric heat variation (&Delta;T) across segmented fresnel lenses. When a person sits motionless (e.g. reading or sleeping), the thermal differential decays to zero, causing the sensor to falsely report an empty room. Furthermore, PIR yields zero distance or coordinate information.<br><br>
+              In contrast, FMCW (Frequency-Modulated Continuous-Wave) radar actively transmits electromagnetic chirps. Even a motionless occupant reflects the wave back with a measurable time delay (&tau; = 2R/c), producing a constant beat frequency (f<sub>b</sub>) that directly reveals distance. Furthermore, the 60 GHz sensor's phase analysis (&Delta;&phi;) tracks sub-millimeter chest wall movements from involuntary breathing, guaranteeing permanent retention.
+            </div>
+          </div>
+
+          <div class="accordion-item glass">
+            <button class="accordion-header">
+              <span>Q2. How does the ESP32 GPIO Matrix work, and why are GPIO 9 and 10 strictly forbidden?</span>
+              <svg class="accordion-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="accordion-content">
+              <strong>Answer:</strong> The ESP32 integrates an internal multiplexing crossbar called the GPIO Matrix. This decoupling layer allows internal hardware peripherals (such as UART0, UART1, and UART2) to be mapped to arbitrary physical package pins via silicon routing registers (e.g. <code>Serial2.begin(115200, SERIAL_8N1, 25, 26)</code>). This ensures true hardware-buffered UART with DMA and hardware FIFO ring-buffers, avoiding the CPU-blocking polling penalty of SoftwareSerial.<br><br>
+              <strong>Why GPIO 9/10 are forbidden:</strong> On typical ESP32 modules (WROOM-32 / WROVER), GPIO 6 through 11 are connected internally to the high-speed SPI flash memory chip storing the bootloader and firmware code. Accessing GPIO 9 (SD2) or GPIO 10 (SD3) corrupts the SPI flash instruction stream, instantly plunging the microcontroller into an unrecoverable crash and watchdog reboot loop.
+            </div>
+          </div>
+
+          <div class="accordion-item glass">
+            <button class="accordion-header">
+              <span>Q3. Why is a dedicated 2A power supply necessary, and why are decoupling capacitors required?</span>
+              <svg class="accordion-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="accordion-content">
+              <strong>Answer:</strong> Total peak power consumption reaches approximately 670 to 750 mA:
+              <ul>
+                <li>ESP32 (WiFi radio burst + dual 240 MHz cores): ~240 mA peak</li>
+                <li>ILI9488 3.5" TFT display LED backlight: ~180 mA</li>
+                <li>HLK-LD2452 24 GHz FMCW transceiver: ~126-130 mA</li>
+                <li>HLK-LD6003D 60 GHz radar core: ~150 mA</li>
+              </ul>
+              Standard laptop USB 2.0 ports are current-limited to 500 mA. When both radars chirp simultaneously alongside WiFi transmission, the 5V rail collapses below 4.4V, tripping the ESP32 internal brownout detector.<br><br>
+              <strong>Decoupling Capacitor Roles:</strong> A bulk 220&ndash;470 &mu;F electrolytic capacitor acts as a localized charge reservoir to buffer transient chirp current surges, while a 0.1 &mu;F ceramic capacitor filters high-frequency RF switching ripple to preserve clean ADC and UART signal integrity.
+            </div>
+          </div>
+
+          <div class="accordion-item glass">
+            <button class="accordion-header">
+              <span>Q4. How does dual-frequency fusion eliminate multipath reflections and environmental ghost targets?</span>
+              <svg class="accordion-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="accordion-content">
+              <strong>Answer:</strong> 24 GHz waves (&lambda; &asymp; 12.5 mm) penetrate surfaces easily but frequently produce multipath ghost reflections from metallic appliances, HVAC air drafts, and fluttering curtains. In contrast, 60 GHz waves (&lambda; &asymp; 5.0 mm) experience much higher atmospheric attenuation and tighter spatial reflection geometry.<br><br>
+              By applying Euclidean spatial gating ($d = \sqrt{(X_{24} - X_{60})^2 + (Y_{24} - Y_{60})^2} \le 0.50\text{ m}$), a reflection visible only to 24G has no corresponding 60G point cluster within 0.50 meters. The fusion state machine recognizes this lack of spatial convergence, classifies the unassociated 24G return as a spurious reflection, and suppresses it—achieving zero false positives.
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- SECTION 4: SITE NAVIGATION SITEMAP -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass" style="padding: 36px; border-radius: var(--radius-xl);">
+          <span class="badge badge-fused" style="margin-bottom: 12px;">COMPLETE 8-PAGE SITEMAP</span>
+          <h3 style="margin-bottom: 20px; color: #FFF;">Explore Any Section of the Platform</h3>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px;">
+            <a href="index.html" class="glass-subtle" style="padding: 16px; display: block; border-radius: var(--radius-sm);">
+              <span class="text-mono" style="font-size: 0.6875rem; color: var(--maroon-soft);">PAGE 01</span>
+              <strong style="display: block; color: #FFF; margin-top: 4px;">Overview &amp; Concept</strong>
+            </a>
+            <a href="ml.html" class="glass-subtle" style="padding: 16px; display: block; border-radius: var(--radius-sm);">
+              <span class="text-mono" style="font-size: 0.6875rem; color: var(--green-soft);">PAGE 02</span>
+              <strong style="display: block; color: #FFF; margin-top: 4px;">Machine Learning</strong>
+            </a>
+            <a href="simulation.html" class="glass-subtle" style="padding: 16px; display: block; border-radius: var(--radius-sm);">
+              <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-tertiary);">PAGE 03</span>
+              <strong style="display: block; color: #FFF; margin-top: 4px;">Simulation Lab</strong>
+            </a>
+            <a href="tech.html" class="glass-subtle" style="padding: 16px; display: block; border-radius: var(--radius-sm);">
+              <span class="text-mono" style="font-size: 0.6875rem; color: var(--maroon-soft);">PAGE 04</span>
+              <strong style="display: block; color: #FFF; margin-top: 4px;">Tech &amp; Architecture</strong>
+            </a>
+            <a href="working.html" class="glass-subtle" style="padding: 16px; display: block; border-radius: var(--radius-sm);">
+              <span class="text-mono" style="font-size: 0.6875rem; color: var(--green-soft);">PAGE 05</span>
+              <strong style="display: block; color: #FFF; margin-top: 4px;">Working &amp; Demo</strong>
+            </a>
+            <a href="upgrades.html" class="glass-subtle" style="padding: 16px; display: block; border-radius: var(--radius-sm);">
+              <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-tertiary);">PAGE 06</span>
+              <strong style="display: block; color: #FFF; margin-top: 4px;">Future Upgrades</strong>
+            </a>
+            <a href="roadmap.html" class="glass-subtle" style="padding: 16px; display: block; border-radius: var(--radius-sm);">
+              <span class="text-mono" style="font-size: 0.6875rem; color: var(--maroon-soft);">PAGE 07</span>
+              <strong style="display: block; color: #FFF; margin-top: 4px;">Project Roadmap</strong>
+            </a>
+            <a href="thanks.html" class="glass-subtle" style="padding: 16px; display: block; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.2);">
+              <span class="text-mono" style="font-size: 0.6875rem; color: #FFF;">PAGE 08</span>
+              <strong style="display: block; color: var(--green-soft); margin-top: 4px;">Viva &amp; Thanks &check;</strong>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Academic Q&A Invitation Line -->
+      <div class="reveal" style="text-align: center; margin: 40px 0; color: var(--text-tertiary); font-family: var(--font-mono); font-size: 0.875rem;">
+        &bull; Questions &amp; viva voce examination open for faculty panel discussion &bull;
+      </div>
+
+      <!-- Footer Nav -->
+      <div class="page-footer-nav">
+        <a href="roadmap.html" class="footer-nav-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          <span>Prev: Project Roadmap</span>
+        </a>
+        <span class="text-mono" style="font-size: 0.8125rem; color: var(--text-tertiary);">PAGE 08 / 08 &bull; FINALE</span>
+        <a href="index.html" class="footer-nav-btn">
+          <span>Return Home</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p style="font-size: 0.8125rem; color: var(--text-tertiary); margin: 0 auto;">
+          Dual mmWave Radar Fusion System &bull; Engineering College Capstone Project &bull; PlatformIO / ESP32
+        </p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Shared Scripts -->
+  <script src="assets/js/core.js"></script>
+  <script src="assets/js/background.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script src="assets/js/reveal.js"></script>
+</body>
+</html>
+

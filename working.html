@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Working & Demo — Dual mmWave Radar Fusion System</title>
+  <meta name="description" content="Working system demonstrations, 100ms frame pipeline timeline, TFT touch UI walkthrough, step-by-step setup, and hardware troubleshooting.">
+
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Theme Stylesheets -->
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/glass.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+</head>
+<body data-bg="flow">
+
+  <div id="scroll-progress"></div>
+  <canvas id="bg-canvas"></canvas>
+  <div class="vignette-overlay"></div>
+
+  <div class="page-wrapper page-fade">
+
+    <!-- Floating Navigation Bar -->
+    <header class="floating-nav glass">
+      <div class="nav-brand">
+        <span class="brand-indicator"></span>
+        <span>Radar Fusion OS</span>
+      </div>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="ml.html" class="nav-link">Machine Learning</a></li>
+          <li><a href="simulation.html" class="nav-link">Simulation</a></li>
+          <li><a href="tech.html" class="nav-link">Tech & Architecture</a></li>
+          <li><a href="working.html" class="nav-link active">Working & Demo</a></li>
+          <li><a href="upgrades.html" class="nav-link">Upgrades</a></li>
+          <li><a href="roadmap.html" class="nav-link">Roadmap</a></li>
+          <li><a href="thanks.html" class="nav-link">Viva & Thanks</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="simulation.html" class="btn btn-primary btn-sm">Try Lab</a>
+        <button class="nav-hamburger" aria-label="Toggle Navigation Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile Drawer -->
+    <div class="mobile-nav-drawer glass-solid">
+      <a href="index.html" class="nav-link">1. Overview</a>
+      <a href="ml.html" class="nav-link">2. Machine Learning</a>
+      <a href="simulation.html" class="nav-link">3. Simulation Lab</a>
+      <a href="tech.html" class="nav-link">4. Tech & Architecture</a>
+      <a href="working.html" class="nav-link active">5. Working & Demo</a>
+      <a href="upgrades.html" class="nav-link">6. Future Upgrades</a>
+      <a href="roadmap.html" class="nav-link">7. Project Roadmap</a>
+      <a href="thanks.html" class="nav-link">8. Viva & Thanks</a>
+    </div>
+
+    <main class="container" style="padding-top: 130px; padding-bottom: 80px;">
+
+      <!-- Header Intro -->
+      <section style="margin-bottom: 56px;">
+        <span class="badge badge-fused" style="margin-bottom: 12px;">PAGE 05 / 08</span>
+        <h1 style="margin-bottom: 16px;">Working system &amp; live demonstrations.</h1>
+        <p>Interactive timeline trace of a single 100 ms radar frame, TFT touchscreen walkthrough, setup instructions, and hardware troubleshooting guides.</p>
+      </section>
+
+      <!-- SECTION 1: LIFE OF ONE FRAME (100 MS TIMELINE SCRUBBER) -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass glass-solid" style="padding: 36px; border-radius: var(--radius-xl);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <span class="badge badge-green" style="margin-bottom: 8px;">DETERMINISTIC LATENCY</span>
+              <h2>Life of One Radar Frame (100 ms)</h2>
+            </div>
+            <div class="glass-subtle" style="padding: 10px 16px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">TIMESTAMP:</span>
+              <strong id="frame-time" class="text-mono" style="font-size: 1.1rem; color: #FFF; margin-left: 8px;">0 ms</strong>
+            </div>
+          </div>
+
+          <p style="margin-bottom: 24px;">Drag the scrubber below to inspect each stage of the FreeRTOS cycle from chirp propagation to WebSocket delivery.</p>
+
+          <!-- Scrubber Range Input -->
+          <div style="margin-bottom: 24px;">
+            <input type="range" id="frame-scrubber" min="0" max="100" value="0" step="1" style="height: 6px;">
+          </div>
+
+          <!-- Active Stage Card -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-lg);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span class="text-mono" style="color: var(--green-soft); font-size: 0.8125rem;">CURRENT PIPELINE PHASE</span>
+              <span class="badge badge-fused">NON-BLOCKING</span>
+            </div>
+            <h3 id="frame-stage" style="color: #FFF; margin-bottom: 8px;">FMCW Chirp Emission</h3>
+            <p id="frame-desc" style="font-size: 0.9375rem; color: var(--text-secondary);">
+              Synthesizer ramps 24 GHz (12.5mm) and 60 GHz (5mm) RF waves across target area.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: TFT TOUCHSCREEN UI WALKTHROUGH -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass" style="padding: 36px; border-radius: var(--radius-xl);">
+          <span class="badge badge-maroon" style="margin-bottom: 8px;">EMBEDDED HARDWARE DISPLAY</span>
+          <h2 style="margin-bottom: 16px;">ILI9488 3.5" (480x320) TFT Touchscreen Interface</h2>
+          <p style="margin-bottom: 28px;">Interactive mock of the physical instrument console running on the ESP32 SPI bus. Click the touch buttons to test feedback.</p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 32px; align-items: center;">
+            
+            <!-- Interactive Touch Screen Mock -->
+            <div style="width: 100%; aspect-ratio: 480/320; background: #000; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; border: 3px solid rgba(255,255,255,0.08); box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">
+                <span class="text-mono" style="font-size: 0.8125rem; color: #FFF; font-weight: 600;">RADAR FUSION EMBEDDED</span>
+                <span id="tft-zoom-label" class="badge badge-fused" style="font-size: 0.6875rem;">ZOOM 6m</span>
+              </div>
+
+              <!-- Center Canvas Screen Simulation -->
+              <div style="text-align: center; padding: 24px 12px; background: rgba(20,22,25,0.7); border-radius: 10px;">
+                <div id="tft-screen-msg" class="text-mono" style="font-size: 0.875rem; color: var(--green-soft);">
+                  Target #01 FUSED LOCK [X: +0.22m, Y: 3.42m] &bull; Conf: 99.4%
+                </div>
+              </div>
+
+              <!-- TFT Physical On-Screen Touch Buttons -->
+              <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
+                <button class="btn btn-secondary btn-sm" data-tft-btn="mode" style="padding: 4px 10px; font-size: 0.75rem;">[24G]</button>
+                <button class="btn btn-secondary btn-sm" data-tft-btn="mode" style="padding: 4px 10px; font-size: 0.75rem;">[60G]</button>
+                <button class="btn btn-primary btn-sm" data-tft-btn="mode" style="padding: 4px 10px; font-size: 0.75rem;">[DUAL]</button>
+                <button class="btn btn-secondary btn-sm" data-tft-btn="zoom" style="padding: 4px 10px; font-size: 0.75rem;">ZOOM -/+</button>
+                <button class="btn btn-secondary btn-sm" data-tft-btn="zone" style="padding: 4px 10px; font-size: 0.75rem;">ZONE</button>
+                <button class="btn btn-secondary btn-sm" data-tft-btn="hex" style="padding: 4px 10px; font-size: 0.75rem;">RAW HEX</button>
+              </div>
+            </div>
+
+            <!-- Walkthrough Details -->
+            <div style="display: flex; flex-direction: column; gap: 14px; font-size: 0.875rem;">
+              <div class="glass-subtle" style="padding: 14px;">
+                <strong style="color: #FFF;">[24G] / [60G] / [DUAL] Buttons:</strong>
+                <span style="color: var(--text-secondary); display: block; margin-top: 4px;">Instantly switches display view between single raw transducer clutter and filtered fused tracks.</span>
+              </div>
+              <div class="glass-subtle" style="padding: 14px;">
+                <strong style="color: #FFF;">ZOOM -/+ Button:</strong>
+                <span style="color: var(--text-secondary); display: block; margin-top: 4px;">Cycles polar range rings across 2m, 4m, 6m, and 8m radial depths to focus on room sub-zones.</span>
+              </div>
+              <div class="glass-subtle" style="padding: 14px;">
+                <strong style="color: #FFF;">RAW HEX View:</strong>
+                <span style="color: var(--text-secondary); display: block; margin-top: 4px;">Diagnostic overlay showing live 30-byte UART frames for on-site wiring verification.</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: MEDIA & VIDEO PLACEHOLDERS -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <span class="badge badge-fused" style="margin-bottom: 8px;">CAPSTONE LAB MEDIA</span>
+        <h2 style="margin-bottom: 16px;">Physical Hardware Photographs &amp; Video</h2>
+        <p style="margin-bottom: 28px;">High-resolution captures of the dual sensor breadboard prototype, PlatformIO compilation, and physical enclosure.</p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px;">
+          
+          <!-- Media Card 1: Video Placeholder -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-lg); text-align: center;">
+            <div style="width: 100%; aspect-ratio: 16/9; background: rgba(0,0,0,0.5); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 16px; border: 1px dashed rgba(255,255,255,0.15);">
+              <!-- REPLACE WITH YOUR OWN FILES -->
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#A6ABB2" stroke-width="1.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 8px;">&lt;!-- REPLACE WITH YOUR OWN VIDEO --&gt;</span>
+              <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-secondary); margin-top: 4px;">hardware_demo.mp4</span>
+            </div>
+            <strong style="color: #FFF; display: block;">Live Walking &amp; Geofence Video</strong>
+            <span style="font-size: 0.8125rem; color: var(--text-tertiary);">Real-time tracking demo with buzzer trip</span>
+          </div>
+
+          <!-- Media Card 2: Photo Placeholder -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-lg); text-align: center;">
+            <div style="width: 100%; aspect-ratio: 16/9; background: rgba(0,0,0,0.5); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 16px; border: 1px dashed rgba(255,255,255,0.15);">
+              <!-- REPLACE WITH YOUR OWN FILES -->
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#A6ABB2" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 8px;">&lt;!-- REPLACE WITH YOUR OWN PHOTO --&gt;</span>
+              <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-secondary); margin-top: 4px;">esp32_breadboard_rig.jpg</span>
+            </div>
+            <strong style="color: #FFF; display: block;">ESP32 Rig &amp; Transducer Mount</strong>
+            <span style="font-size: 0.8125rem; color: var(--text-tertiary);">Dual sensor co-planar alignment</span>
+          </div>
+
+          <!-- Media Card 3: Photo Placeholder -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-lg); text-align: center;">
+            <div style="width: 100%; aspect-ratio: 16/9; background: rgba(0,0,0,0.5); border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 16px; border: 1px dashed rgba(255,255,255,0.15);">
+              <!-- REPLACE WITH YOUR OWN FILES -->
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#A6ABB2" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 8px;">&lt;!-- REPLACE WITH YOUR OWN PHOTO --&gt;</span>
+              <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-secondary); margin-top: 4px;">tft_touch_screen_close.jpg</span>
+            </div>
+            <strong style="color: #FFF; display: block;">3.5" ILI9488 Touch Screen</strong>
+            <span style="font-size: 0.8125rem; color: var(--text-tertiary);">Close-up of polar radar render</span>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- SECTION 3B: INTERACTIVE 8-CHANNEL LOGIC ANALYZER & BUS TIMING WAVEFORMS -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass glass-solid" style="padding: 36px; border-radius: var(--radius-xl);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <span class="badge badge-fused" style="margin-bottom: 8px;">DIGITAL OSCILLOSCOPE &amp; LOGIC ANALYZER</span>
+              <h2>Real-Time Hardware Bus Timing &amp; Interrupt Trace</h2>
+              <p>Live multi-channel logic analyzer capture displaying asynchronous UART DMA packets, VSPI 40MHz display clocks, capacitive touch interrupts, and piezo alarm triggers.</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <button id="btn-la-pause" class="btn btn-secondary btn-sm">⏸ Pause Scope</button>
+            </div>
+          </div>
+
+          <!-- Logic Analyzer Canvas -->
+          <div style="position: relative; width: 100%; height: 280px; border-radius: var(--radius-md); overflow: hidden; background: rgba(14, 15, 17, 0.8); margin-bottom: 24px;">
+            <canvas id="logic-analyzer-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+          </div>
+
+          <!-- Bus Timing Diagnostics Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+            <div class="glass-subtle" style="padding: 18px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--maroon-soft); font-weight: 600;">1. UART1 256,000 BAUD (LD2452)</span>
+              <p style="font-size: 0.8125rem; margin-top: 6px; color: var(--text-secondary);">
+                Fixed 30-byte frames ingest in 1.17 ms window. Hardware FIFO buffer prevents frame corruption during dual-core FreeRTOS task switches.
+              </p>
+            </div>
+            <div class="glass-subtle" style="padding: 18px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--green-soft); font-weight: 600;">2. UART0 115,200 BAUD (LD6003D)</span>
+              <p style="font-size: 0.8125rem; margin-top: 6px; color: var(--text-secondary);">
+                Continuous point-cloud bursts parsed on Core 0. DMA ring-buffer queues validated payloads into shared memory without CPU polling.
+              </p>
+            </div>
+            <div class="glass-subtle" style="padding: 18px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: #63D4A3; font-weight: 600;">3. VSPI 40MHz CLOCK ARBITRATION</span>
+              <p style="font-size: 0.8125rem; margin-top: 6px; color: var(--text-secondary);">
+                TFT_CS (GPIO15) and TOUCH_CS (GPIO21) are mutually exclusive. Hardware bus arbitration guarantees screen DMA never collides with touch polling.
+              </p>
+            </div>
+            <div class="glass-subtle" style="padding: 18px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--alert-maroon); font-weight: 600;">4. PEN IRQ &amp; PIEZO ALARM PWM</span>
+              <p style="font-size: 0.8125rem; margin-top: 6px; color: var(--text-secondary);">
+                TOUCH_IRQ (GPIO22) triggers on falling edge (< 5 &mu;s latency). GPIO32 generates clean 2.7 kHz resonant square waves on geofence breach.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: STEP-BY-STEP SETUP GUIDE -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass glass-solid" style="padding: 36px; border-radius: var(--radius-xl);">
+          <span class="badge badge-green" style="margin-bottom: 8px;">FIRMWARE FLASHING GUIDE</span>
+          <h2 style="margin-bottom: 24px;">PlatformIO Deployment in 4 Steps</h2>
+
+          <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="glass-subtle" style="padding: 20px; display: flex; gap: 16px; align-items: flex-start;">
+              <span class="badge badge-fused" style="font-size: 0.875rem; padding: 6px 12px;">01</span>
+              <div>
+                <strong style="color: #FFF;">Clone Repository &amp; Open in VS Code</strong>
+                <p style="font-size: 0.875rem; margin-top: 4px;">Ensure PlatformIO IDE extension is installed in VS Code. Open the project root folder.</p>
+              </div>
+            </div>
+
+            <div class="glass-subtle" style="padding: 20px; display: flex; gap: 16px; align-items: flex-start;">
+              <span class="badge badge-fused" style="font-size: 0.875rem; padding: 6px 12px;">02</span>
+              <div>
+                <strong style="color: #FFF;">Configure Network in Config.h</strong>
+                <p style="font-size: 0.875rem; margin-top: 4px;">Set <code>DEFAULT_WIFI_SSID</code> and <code>DEFAULT_WIFI_PASS</code> for LAN connection, or leave defaults for SoftAP.</p>
+              </div>
+            </div>
+
+            <div class="glass-subtle" style="padding: 20px; display: flex; gap: 16px; align-items: flex-start;">
+              <span class="badge badge-fused" style="font-size: 0.875rem; padding: 6px 12px;">03</span>
+              <div>
+                <strong style="color: #FFF;">Compile &amp; Upload Firmware</strong>
+                <p style="font-size: 0.875rem; margin-top: 4px;">Run <code>pio run -t upload</code> to flash both FreeRTOS tasks to the ESP32.</p>
+              </div>
+            </div>
+
+            <div class="glass-subtle" style="padding: 20px; display: flex; gap: 16px; align-items: flex-start;">
+              <span class="badge badge-fused" style="font-size: 0.875rem; padding: 6px 12px;">04</span>
+              <div>
+                <strong style="color: #FFF;">Monitor Serial Diagnostics</strong>
+                <p style="font-size: 0.875rem; margin-top: 4px;">Run <code>pio device monitor</code> @ 115200 baud to view boot logs, SPI check, and IP address allocation.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 5: HARDWARE TROUBLESHOOTING ACCORDION (4 ISSUES) -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <span class="badge badge-maroon" style="margin-bottom: 8px;">DIAGNOSTIC MATRIX</span>
+        <h2 style="margin-bottom: 24px;">Troubleshooting Hardware Issues</h2>
+
+        <div class="accordion">
+          
+          <div class="accordion-item glass">
+            <button class="accordion-header">
+              <span>1. White Blank Screen on ILI9488 3.5" TFT</span>
+              <svg class="accordion-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="accordion-content">
+              <strong>Root Cause:</strong> SPI initialization failure, incorrect CS/DC pin definition, or insufficient 5V backlight current.<br><br>
+              <strong>Remedy:</strong> Verify SPI wiring: CS=GPIO15, DC=GPIO2, RST=GPIO4, Backlight=GPIO27. Check that the 5V supply provides &ge; 180 mA dedicated to the screen backlight. Ensure TFT_eSPI <code>User_Setup.h</code> selects driver <code>#define ILI9488_DRIVER</code>.
+            </div>
+          </div>
+
+          <div class="accordion-item glass">
+            <button class="accordion-header">
+              <span>2. Sensor Status Reports "Disconnected"</span>
+              <svg class="accordion-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="accordion-content">
+              <strong>Root Cause:</strong> TX/RX crossed lines, baud rate mismatch, or floating BOOT pin on LD6003D.<br><br>
+              <strong>Remedy:</strong> Remember sensor TX connects to ESP32 RX. Check baud: LD2452 requires 256,000 bps on UART1; LD6003D requires 115,200 bps on UART0. On LD6003D, verify pin BOOT/P19 is tied securely to GND. Switch to "VIEW RAW HEX" on the TFT to inspect live incoming byte sync headers.
+            </div>
+          </div>
+
+          <div class="accordion-item glass">
+            <button class="accordion-header">
+              <span>3. Touch Coordinate Axes Inverted or Offset</span>
+              <svg class="accordion-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="accordion-content">
+              <strong>Root Cause:</strong> Resistive touch calibration mismatch between landscape orientation and physical sensor matrix.<br><br>
+              <strong>Remedy:</strong> Check <code>touch_calibrate()</code> values inside <code>Config.h</code>. If X and Y are inverted, update the rotation mapping flag <code>tft.setRotation(1)</code> or swap calibration extremes <code>CALIBRATION_X_MIN</code> and <code>CALIBRATION_X_MAX</code>.
+            </div>
+          </div>
+
+          <div class="accordion-item glass">
+            <button class="accordion-header">
+              <span>4. Brownout Resets / Sudden ESP32 Reboots</span>
+              <svg class="accordion-icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="accordion-content">
+              <strong>Root Cause:</strong> Inrush current during simultaneous 24G + 60G radar chirping exceeding power supply limits (draw spikes to ~750 mA).<br><br>
+              <strong>Remedy:</strong> Do NOT power the entire rig from a laptop USB port (limited to 500 mA). Connect a dedicated 5V 2A external DC power supply. Solder a 220&ndash;470 &mu;F electrolytic capacitor plus a 0.1 &mu;F ceramic capacitor directly across the 5V and GND pins of the ESP32.
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- SECTION 6: MEASURED RESULTS SECTION -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass glass-solid" style="padding: 36px; border-radius: var(--radius-xl);">
+          <span class="badge badge-fused" style="margin-bottom: 8px;">EMPIRICAL VALIDATION</span>
+          <h2 style="margin-bottom: 24px;">Lab Experimental Benchmark Results</h2>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px;">
+            <div class="glass-subtle" style="padding: 20px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">FALSE POSITIVE RATE</span>
+              <div class="stat-number" style="font-size: 2rem; color: var(--green-soft); margin: 8px 0;">0.00 %</div>
+              <p style="font-size: 0.8125rem;">During 48-hour continuous test with background fans and fluttering curtains.</p>
+            </div>
+
+            <div class="glass-subtle" style="padding: 20px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">STATIONARY RETENTION</span>
+              <div class="stat-number" style="font-size: 2rem; color: #FFF; margin: 8px 0;">100 %</div>
+              <p style="font-size: 0.8125rem;">Maintained lock across 60-minute motionless seated reading test (PIR dropped at 4s).</p>
+            </div>
+
+            <div class="glass-subtle" style="padding: 20px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">MEAN POSITION ERROR</span>
+              <div class="stat-number" style="font-size: 2rem; color: var(--green-soft); margin: 8px 0;">5.4 cm</div>
+              <p style="font-size: 0.8125rem;">Measured against optical ground truth at 4.0 meters radial distance.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer Nav -->
+      <div class="page-footer-nav">
+        <a href="tech.html" class="footer-nav-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          <span>Prev: Tech &amp; Architecture</span>
+        </a>
+        <span class="text-mono" style="font-size: 0.8125rem; color: var(--text-tertiary);">PAGE 05 / 08 &bull; WORKING &amp; DEMO</span>
+        <a href="upgrades.html" class="footer-nav-btn">
+          <span>Next: Future Upgrades</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p style="font-size: 0.8125rem; color: var(--text-tertiary); margin: 0 auto;">
+          Dual mmWave Radar Fusion System &bull; Engineering College Capstone Project &bull; PlatformIO / ESP32
+        </p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Shared Scripts -->
+  <script src="assets/js/core.js"></script>
+  <script src="assets/js/background.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script src="assets/js/reveal.js"></script>
+  <script src="assets/js/diagrams.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      if (window.RFO && window.RFO.initLifeOfFrame) {
+        window.RFO.initLifeOfFrame();
+      }
+      if (window.RFO && window.RFO.initTFTMock) {
+        window.RFO.initTFTMock();
+      }
+      if (window.RFO && window.RFO.initLogicAnalyzer) {
+        window.RFO.initLogicAnalyzer('logic-analyzer-canvas');
+      }
+    });
+  </script>
+</body>
+</html>
+

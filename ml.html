@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Machine Learning & Edge TinyML — Dual mmWave Radar Fusion System</title>
+  <meta name="description" content="Micro-Doppler spectrogram classification via 1D-CNN and Gated Recurrent Units (GRU) quantized with TensorFlow Lite Micro on ESP32.">
+
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Theme Stylesheets -->
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/glass.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+</head>
+<body data-bg="tensor">
+
+  <div id="scroll-progress"></div>
+  <canvas id="bg-canvas"></canvas>
+  <div class="vignette-overlay"></div>
+
+  <div class="page-wrapper page-fade">
+
+    <!-- Floating Navigation Bar -->
+    <header class="floating-nav glass">
+      <div class="nav-brand">
+        <span class="brand-indicator"></span>
+        <span>Radar Fusion OS</span>
+      </div>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="ml.html" class="nav-link active">Machine Learning</a></li>
+          <li><a href="simulation.html" class="nav-link">Simulation</a></li>
+          <li><a href="tech.html" class="nav-link">Tech & Architecture</a></li>
+          <li><a href="working.html" class="nav-link">Working & Demo</a></li>
+          <li><a href="upgrades.html" class="nav-link">Upgrades</a></li>
+          <li><a href="roadmap.html" class="nav-link">Roadmap</a></li>
+          <li><a href="thanks.html" class="nav-link">Viva & Thanks</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="simulation.html" class="btn btn-primary btn-sm">Try Lab</a>
+        <button class="nav-hamburger" aria-label="Toggle Navigation Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile Drawer -->
+    <div class="mobile-nav-drawer glass-solid">
+      <a href="index.html" class="nav-link">1. Overview</a>
+      <a href="ml.html" class="nav-link active">2. Machine Learning</a>
+      <a href="simulation.html" class="nav-link">3. Simulation Lab</a>
+      <a href="tech.html" class="nav-link">4. Tech & Architecture</a>
+      <a href="working.html" class="nav-link">5. Working & Demo</a>
+      <a href="upgrades.html" class="nav-link">6. Future Upgrades</a>
+      <a href="roadmap.html" class="nav-link">7. Project Roadmap</a>
+      <a href="thanks.html" class="nav-link">8. Viva & Thanks</a>
+    </div>
+
+    <main class="container" style="padding-top: 140px; padding-bottom: 80px;">
+
+      <!-- HERO SECTION -->
+      <section class="reveal" style="margin-bottom: 64px;">
+        <div style="display: flex; gap: 8px; margin-bottom: 14px;">
+          <span class="badge badge-fused">RADAR SIGNAL PROCESSING</span>
+          <span class="badge badge-green">TENSORFLOW LITE MICRO</span>
+        </div>
+        <h1 style="margin-bottom: 20px; max-width: 18ch;">Classifying human micro-motion with Edge TinyML.</h1>
+        <p style="font-size: 1.15rem; max-width: 60ch; margin-bottom: 36px;">
+          Transforming raw FMCW radar IQ baseband chirps into Short-Time Fourier Transform (STFT) micro-Doppler spectrograms. Running temporal 1D-CNN + GRU inference directly on ESP32 dual-core silicon via INT8 post-training quantization.
+        </p>
+
+        <!-- KPI Summary Bar -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+          <div class="glass stat-card">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">VALIDATION ACCURACY</span>
+            <div class="stat-number" style="color: var(--green-soft);">98.6%</div>
+            <div class="stat-label">Top-1 Classification</div>
+            <div class="stat-subtext">Across 2,400 test trials</div>
+          </div>
+          <div class="glass stat-card">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">ON-CHIP INFERENCE</span>
+            <div class="stat-number" style="color: #FFF;">11.4 ms</div>
+            <div class="stat-label">Execution Latency</div>
+            <div class="stat-subtext">ESP32 Xtensa 240 MHz</div>
+          </div>
+          <div class="glass stat-card">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">SRAM FOOTPRINT</span>
+            <div class="stat-number" style="color: var(--maroon-soft);">41.8 KB</div>
+            <div class="stat-label">Peak Tensor Arena</div>
+            <div class="stat-subtext">Fits internal ESP32 SRAM</div>
+          </div>
+          <div class="glass stat-card">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">FLASH ALLOCATION</span>
+            <div class="stat-number" style="color: #FFF;">280 KB</div>
+            <div class="stat-label">INT8 Quantized Model</div>
+            <div class="stat-subtext">-75% vs 32-bit Float</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 1: MICRO-DOPPLER SPECTROGRAM VISUALIZER -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass glass-solid" style="padding: 36px; border-radius: var(--radius-xl);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <span class="badge badge-green" style="margin-bottom: 8px;">SHORT-TIME FOURIER TRANSFORM (STFT)</span>
+              <h2>1. Micro-Doppler Velocity Signature Extraction</h2>
+              <p>The 60 GHz radar extracts involuntary kinematic limb swings and chest wall respiration from phase shifts over sliding 64-sample Hamming windows.</p>
+            </div>
+            <!-- Class Selector Controls -->
+            <div class="segmented-control">
+              <button class="segmented-btn active" data-spectrogram-class="walking">Walking</button>
+              <button class="segmented-btn" data-spectrogram-class="breathing">Vitals (Breathing)</button>
+              <button class="segmented-btn" data-spectrogram-class="fall">Fall Event</button>
+              <button class="segmented-btn" data-spectrogram-class="fan">Fan Clutter</button>
+            </div>
+          </div>
+
+          <!-- Live Scrolling Spectrogram Heatmap -->
+          <div style="position: relative; width: 100%; height: 260px; border-radius: var(--radius-lg); overflow: hidden; background: rgba(14, 15, 17, 0.8); margin-bottom: 20px;">
+            <canvas id="spectrogram-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+          </div>
+
+          <!-- 4 Comparative Class Descriptions -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; font-size: 0.875rem;">
+            <div class="glass-subtle" style="padding: 16px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--green-soft);">CLASS 00 &bull; WALKING</span>
+              <strong style="color: #FFF; display: block; margin: 4px 0 6px 0;">Locomotion Kinematics</strong>
+              <span style="color: var(--text-secondary);">Torso bulk velocity (&plusmn;1.2 m/s) with prominent arm and leg swing harmonic envelopes (&plusmn;2.5 m/s).</span>
+            </div>
+            <div class="glass-subtle" style="padding: 16px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: #FFF;">CLASS 01 &bull; SEATED VITALS</span>
+              <strong style="color: #FFF; display: block; margin: 4px 0 6px 0;">Thoracic Respiration</strong>
+              <span style="color: var(--text-secondary);">Sub-Doppler micro-motion (0.15&ndash;0.35 Hz, &plusmn;0.04 m/s) tracking 0.2mm chest wall displacement during breathing.</span>
+            </div>
+            <div class="glass-subtle" style="padding: 16px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--alert-maroon);">CLASS 02 &bull; FALL EVENT</span>
+              <strong style="color: #FFF; display: block; margin: 4px 0 6px 0;">Acute Transient Drop</strong>
+              <span style="color: var(--text-secondary);">Sudden vertical acceleration spike exceeding 4.2 m/s followed by prolonged post-impact zero-Doppler silence.</span>
+            </div>
+            <div class="glass-subtle" style="padding: 16px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--maroon-soft);">CLASS 03 &bull; CLUTTER</span>
+              <strong style="color: #FFF; display: block; margin: 4px 0 6px 0;">Rigid Oscillating Fan</strong>
+              <span style="color: var(--text-secondary);">Fixed integer harmonic spikes from metallic blades without organic biological variance; automatically rejected.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 2: NEURAL NETWORK ARCHITECTURE & ANIMATED FORWARD/BACKPROP -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass" style="padding: 36px; border-radius: var(--radius-xl);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 14px;">
+            <div>
+              <span class="badge badge-maroon" style="margin-bottom: 8px;">EDGE MODEL TOPOLOGY</span>
+              <h2>2. 1D-CNN + GRU Recurrent Classifier Architecture</h2>
+              <p>A hybrid spatial-temporal model combining 1D depthwise separable convolutions for spectral feature extraction with Gated Recurrent Units for sequential dynamics.</p>
+            </div>
+            <span class="badge badge-fused">PARAMETERS: 38,420 INT8</span>
+          </div>
+
+          <!-- Animated Neural Network Canvas -->
+          <div style="position: relative; width: 100%; height: 280px; border-radius: var(--radius-lg); overflow: hidden; background: rgba(14, 15, 17, 0.7); margin-bottom: 24px;">
+            <canvas id="neural-net-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+          </div>
+
+          <!-- 5-Stage Pipeline Cards -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; font-family: var(--font-mono); font-size: 0.75rem;">
+            <div class="glass-subtle" style="padding: 14px;">
+              <span style="color: var(--text-tertiary);">STAGE 01</span>
+              <div style="color: #FFF; font-weight: 600; margin: 4px 0;">Input Tensor</div>
+              <span style="color: var(--maroon-soft);">[128 bins &times; 64 frames]</span>
+            </div>
+            <div class="glass-subtle" style="padding: 14px;">
+              <span style="color: var(--text-tertiary);">STAGE 02</span>
+              <div style="color: #FFF; font-weight: 600; margin: 4px 0;">1D Depthwise Conv</div>
+              <span style="color: var(--green-soft);">k=5, s=2, 32 filters, ReLU6</span>
+            </div>
+            <div class="glass-subtle" style="padding: 14px;">
+              <span style="color: var(--text-tertiary);">STAGE 03</span>
+              <div style="color: #FFF; font-weight: 600; margin: 4px 0;">Spatial Dropout</div>
+              <span style="color: var(--text-secondary);">Rate = 0.20 Regularization</span>
+            </div>
+            <div class="glass-subtle" style="padding: 14px;">
+              <span style="color: var(--text-tertiary);">STAGE 04</span>
+              <div style="color: #FFF; font-weight: 600; margin: 4px 0;">GRU Recurrence</div>
+              <span style="color: var(--green-soft);">Hidden Dim = 48 Units</span>
+            </div>
+            <div class="glass-subtle" style="padding: 14px;">
+              <span style="color: var(--text-tertiary);">STAGE 05</span>
+              <div style="color: #FFF; font-weight: 600; margin: 4px 0;">Dense Softmax</div>
+              <span style="color: #FFF;">4 Probability Classes</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 3: COMPLETE TRAINING PIPELINE & WORKBENCH -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass glass-solid" style="padding: 36px; border-radius: var(--radius-xl);">
+          <span class="badge badge-green" style="margin-bottom: 8px;">TRAINING PIPELINE &amp; MATHEMATICS</span>
+          <h2 style="margin-bottom: 16px;">3. Loss Functions, Regularization &amp; Backpropagation</h2>
+          <p style="margin-bottom: 32px;">
+            Rigorous mathematical handling of training dynamics: solving acute class imbalance with Focal Loss, inducing weight sparsity for flash storage via L1 Lasso, and tracking signal quality with PSNR.
+          </p>
+
+          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; align-items: start;">
+            
+            <!-- Left: Interactive Training Loss Curve Canvas -->
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">TRAINING DYNAMICS (120 EPOCHS)</span>
+                <span class="badge badge-fused">COSINE ANNEALING</span>
+              </div>
+              <div style="width: 100%; height: 230px; border-radius: var(--radius-md); overflow: hidden; background: rgba(14, 15, 17, 0.7); margin-bottom: 18px;">
+                <canvas id="loss-curve-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+              </div>
+
+              <!-- Interactive Regularization Sliders -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+                <div class="slider-group">
+                  <div class="slider-header">
+                    <span class="slider-label">Learning Rate (&alpha;)</span>
+                    <span id="val-lr" class="slider-value">0.0010</span>
+                  </div>
+                  <input type="range" id="slider-lr" min="0.0001" max="0.0050" step="0.0001" value="0.0010">
+                </div>
+
+                <div class="slider-group">
+                  <div class="slider-header">
+                    <span class="slider-label">L1 Penalty (&lambda;<sub>1</sub>)</span>
+                    <span id="val-l1" class="slider-value">0.00010</span>
+                  </div>
+                  <input type="range" id="slider-l1" min="0.00001" max="0.00050" step="0.00001" value="0.00010">
+                </div>
+
+                <div class="slider-group">
+                  <div class="slider-header">
+                    <span class="slider-label">L2 Decay (&lambda;<sub>2</sub>)</span>
+                    <span id="val-l2" class="slider-value">0.00010</span>
+                  </div>
+                  <input type="range" id="slider-l2" min="0.00001" max="0.00050" step="0.00001" value="0.00010">
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-tertiary); margin-top: 10px;">
+                <span>Weight Sparsity: <strong id="val-sparsity" style="color: var(--green-soft);">26.4%</strong></span>
+                <span>Signal PSNR: <strong id="val-psnr" style="color: #FFF;">28.42 dB</strong></span>
+              </div>
+            </div>
+
+            <!-- Right: Rigorous Mathematical Cards -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <!-- Loss Equation -->
+              <div class="glass-subtle" style="padding: 18px;">
+                <span class="text-mono" style="font-size: 0.75rem; color: var(--maroon-soft);">FOCAL LOSS (CLASS IMBALANCE)</span>
+                <div class="text-mono" style="font-size: 0.875rem; color: #FFF; margin: 8px 0;">
+                  L<sub>FL</sub> = -&alpha;<sub>t</sub> (1 - p<sub>t</sub>)<sup>&gamma;</sup> log(p<sub>t</sub>)
+                </div>
+                <p style="font-size: 0.8125rem; color: var(--text-secondary);">
+                  Setting &gamma;=2.0 down-weights easy non-fall samples by factor (1-p<sub>t</sub>)<sup>2</sup>, focusing gradient updates on rare acute fall impacts.
+                </p>
+              </div>
+
+              <!-- L1 & L2 Regularization -->
+              <div class="glass-subtle" style="padding: 18px;">
+                <span class="text-mono" style="font-size: 0.75rem; color: var(--green-soft);">ELASTIC NET REGULARIZATION</span>
+                <div class="text-mono" style="font-size: 0.875rem; color: #FFF; margin: 8px 0;">
+                  L<sub>reg</sub> = &lambda;<sub>1</sub> &sum; |W| + (&lambda;<sub>2</sub> / 2) &sum; W<sup>2</sup>
+                </div>
+                <p style="font-size: 0.8125rem; color: var(--text-secondary);">
+                  L1 (Lasso) forces 26.4% of weights to exactly zero for zero-overhead flash pruning; L2 (Ridge) restricts weight magnitudes against gradient explosion.
+                </p>
+              </div>
+
+              <!-- Backpropagation Chain Rule -->
+              <div class="glass-subtle" style="padding: 18px;">
+                <span class="text-mono" style="font-size: 0.75rem; color: #FFF;">BACKPROPAGATION THROUGH TIME (BPTT)</span>
+                <div class="text-mono" style="font-size: 0.875rem; color: var(--green-soft); margin: 8px 0;">
+                  &part;L / &part;W = &sum; (&part;L / &part;h<sub>t</sub>) &middot; (&part;h<sub>t</sub> / &part;z<sub>t</sub>) &middot; (&part;z<sub>t</sub> / &part;W)
+                </div>
+                <p style="font-size: 0.8125rem; color: var(--text-secondary);">
+                  Gradients propagate through 64 temporal frames with gradient norm clipping at 1.0 to guarantee stable convergence in recurrent GRU gates.
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 4: EMPIRICAL VALIDATION & CONFUSION MATRIX -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass" style="padding: 36px; border-radius: var(--radius-xl);">
+          <span class="badge badge-fused" style="margin-bottom: 8px;">BENCHMARK EVALUATION</span>
+          <h2 style="margin-bottom: 16px;">4. Confusion Matrix &amp; Hardware Execution Timings</h2>
+          <p style="margin-bottom: 28px;">Measured across 2,400 validation samples collected in residential and laboratory environments.</p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 32px; align-items: start;">
+            
+            <!-- 4x4 Confusion Matrix -->
+            <div class="glass-solid" style="padding: 24px; border-radius: var(--radius-lg); overflow-x: auto;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 12px;">CONFUSION MATRIX (N = 2,400)</span>
+              <table style="width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 0.8125rem; text-align: center;">
+                <thead>
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: var(--text-tertiary);">
+                    <th style="padding: 8px; text-align: left;">ACTUAL \ PRED</th>
+                    <th style="padding: 8px;">Walk</th>
+                    <th style="padding: 8px;">Vitals</th>
+                    <th style="padding: 8px;">Fall</th>
+                    <th style="padding: 8px;">Fan</th>
+                  </tr>
+                </thead>
+                <tbody style="color: var(--text-secondary);">
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                    <td style="padding: 10px; text-align: left; color: #FFF;">Walking</td>
+                    <td style="padding: 10px; background: rgba(63,185,133,0.2); color: var(--green-soft); font-weight: 600;">99.2%</td>
+                    <td style="padding: 10px;">0.5%</td>
+                    <td style="padding: 10px;">0.1%</td>
+                    <td style="padding: 10px;">0.2%</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                    <td style="padding: 10px; text-align: left; color: #FFF;">Seated Vitals</td>
+                    <td style="padding: 10px;">0.8%</td>
+                    <td style="padding: 10px; background: rgba(63,185,133,0.2); color: var(--green-soft); font-weight: 600;">98.4%</td>
+                    <td style="padding: 10px;">0.0%</td>
+                    <td style="padding: 10px;">0.8%</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                    <td style="padding: 10px; text-align: left; color: #FFF;">Fall Event</td>
+                    <td style="padding: 10px;">0.2%</td>
+                    <td style="padding: 10px;">0.4%</td>
+                    <td style="padding: 10px; background: rgba(63,185,133,0.25); color: #FFF; font-weight: 600;">99.4%</td>
+                    <td style="padding: 10px;">0.0%</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 10px; text-align: left; color: #FFF;">Fan Clutter</td>
+                    <td style="padding: 10px;">0.5%</td>
+                    <td style="padding: 10px;">1.8%</td>
+                    <td style="padding: 10px;">0.0%</td>
+                    <td style="padding: 10px; background: rgba(63,185,133,0.2); color: var(--green-soft); font-weight: 600;">97.7%</td>
+                  </tr>
+                </tbody>
+              </table>
+              <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-tertiary); margin-top: 14px;">
+                <span>Macro Precision: <strong>98.9%</strong></span>
+                <span>Macro Recall: <strong>98.3%</strong></span>
+                <span>Macro F1: <strong style="color: var(--green-soft);">98.6%</strong></span>
+              </div>
+            </div>
+
+            <!-- ESP32 Hardware Execution Profiling -->
+            <div class="glass-solid" style="padding: 24px; border-radius: var(--radius-lg);">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 12px;">ESP32 CORE 0 EXECUTION PROFILE (240 MHz)</span>
+              
+              <div style="display: flex; flex-direction: column; gap: 12px; font-family: var(--font-mono); font-size: 0.8125rem;">
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="color: var(--text-secondary);">1. STFT Spectrogram Windowing</span>
+                    <span style="color: #FFF;">3.2 ms</span>
+                  </div>
+                  <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden;">
+                    <div style="width: 28%; height: 100%; background: var(--maroon-main);"></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="color: var(--text-secondary);">2. 1D Depthwise-Separable Convolutions</span>
+                    <span style="color: #FFF;">4.8 ms</span>
+                  </div>
+                  <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden;">
+                    <div style="width: 42%; height: 100%; background: var(--green-main);"></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="color: var(--text-secondary);">3. Gated Recurrent Unit (GRU)</span>
+                    <span style="color: #FFF;">2.9 ms</span>
+                  </div>
+                  <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden;">
+                    <div style="width: 25%; height: 100%; background: #FFFFFF;"></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                    <span style="color: var(--text-secondary);">4. Softmax Probability Projection</span>
+                    <span style="color: #FFF;">0.5 ms</span>
+                  </div>
+                  <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden;">
+                    <div style="width: 5%; height: 100%; background: var(--maroon-soft);"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.8125rem;">
+                <span style="color: var(--text-tertiary);">TOTAL INFERENCE TIME:</span>
+                <strong style="color: var(--green-soft);">11.4 ms (&lt; 50 ms budget)</strong>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- SECTION 5: POST-TRAINING QUANTIZATION (FP32 TO INT8) -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass glass-solid" style="padding: 36px; border-radius: var(--radius-xl);">
+          <span class="badge badge-maroon" style="margin-bottom: 8px;">TENSOR ALLOCATION</span>
+          <h2 style="margin-bottom: 16px;">5. Post-Training Quantization (FP32 &rarr; INT8)</h2>
+          <p style="margin-bottom: 28px;">
+            Full integer symmetric quantization maps float32 tensors to 8-bit integers via scale factor $S$ and zero-point offset $Z$: $q = \text{clamp}\left(\text{round}\left(\frac{x}{S}\right) + Z, -128, 127\right)$, reducing memory by 75% with under 0.3% loss in accuracy.
+          </p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+            <div class="glass-subtle" style="padding: 24px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">FLASH MEMORY USAGE</span>
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin: 12px 0 6px 0;">
+                <span class="text-mono" style="font-size: 1.8rem; font-weight: 600; color: #FFF;">280 KB</span>
+                <span class="badge badge-green">-75.0% REDUCTION</span>
+              </div>
+              <span style="font-size: 0.8125rem; color: var(--text-secondary);">Down from 1,120 KB (Unquantized FP32 weights).</span>
+            </div>
+
+            <div class="glass-subtle" style="padding: 24px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">RAM TENSOR ARENA</span>
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin: 12px 0 6px 0;">
+                <span class="text-mono" style="font-size: 1.8rem; font-weight: 600; color: #FFF;">41.8 KB</span>
+                <span class="badge badge-green">-75.1% REDUCTION</span>
+              </div>
+              <span style="font-size: 0.8125rem; color: var(--text-secondary);">Down from 168.0 KB, easily fitting internal SRAM.</span>
+            </div>
+
+            <div class="glass-subtle" style="padding: 24px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">ACCURACY DEGRADATION</span>
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin: 12px 0 6px 0;">
+                <span class="text-mono" style="font-size: 1.8rem; font-weight: 600; color: var(--green-soft);">-0.3%</span>
+                <span class="badge badge-fused">NEGLIGIBLE</span>
+              </div>
+              <span style="font-size: 0.8125rem; color: var(--text-secondary);">Drops from 98.9% (FP32) to 98.6% (INT8).</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer Nav -->
+      <div class="page-footer-nav">
+        <a href="index.html" class="footer-nav-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          <span>Prev: Overview</span>
+        </a>
+        <span class="text-mono" style="font-size: 0.8125rem; color: var(--text-tertiary);">PAGE 02 / 08 &bull; MACHINE LEARNING</span>
+        <a href="simulation.html" class="footer-nav-btn">
+          <span>Next: Simulation Lab</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p style="font-size: 0.8125rem; color: var(--text-tertiary); margin: 0 auto;">
+          Dual mmWave Radar Fusion System &bull; Engineering College Capstone Project &bull; PlatformIO / ESP32 &bull; Edge TinyML
+        </p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Shared Scripts -->
+  <script src="assets/js/core.js"></script>
+  <script src="assets/js/background.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script src="assets/js/reveal.js"></script>
+  <script src="assets/js/diagrams.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      if (window.RFO && window.RFO.initMicroDopplerSpectrogram) {
+        window.RFO.initMicroDopplerSpectrogram('spectrogram-canvas');
+      }
+      if (window.RFO && window.RFO.initNeuralNetworkVisualizer) {
+        window.RFO.initNeuralNetworkVisualizer('neural-net-canvas');
+      }
+      if (window.RFO && window.RFO.initTrainingWorkbench) {
+        window.RFO.initTrainingWorkbench();
+      }
+    });
+  </script>
+</body>
+</html>
+

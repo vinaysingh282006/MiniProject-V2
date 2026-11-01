@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>RadarFusion Capstone - FMCW Physics &amp; EKF Tracking Systems</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Public+Sans:wght@400;500;600&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "on-primary": "#620e1e",
+            "primary-fixed": "#ffdadb",
+            "on-surface": "#e3e2e4",
+            "inverse-surface": "#e3e2e4",
+            "surface-container-high": "#292a2c",
+            "secondary-fixed": "#a3f3cb",
+            "tertiary-fixed-dim": "#c5c7c8",
+            "inverse-on-surface": "#303033",
+            "on-tertiary-fixed": "#191c1d",
+            "surface-container": "#1f2022",
+            "on-error-container": "#ffdad6",
+            "background": "#121315",
+            "surface-variant": "#343537",
+            "on-background": "#e3e2e4",
+            "on-secondary": "#003825",
+            "surface-dim": "#121315",
+            "primary-fixed-dim": "#ffb2b7",
+            "primary-container": "#8c2f3b",
+            "outline": "#a38b8b",
+            "tertiary-fixed": "#e1e3e4",
+            "surface-tint": "#ffb2b7",
+            "surface-bright": "#38393b",
+            "on-error": "#690005",
+            "on-primary-fixed-variant": "#802633",
+            "on-secondary-container": "#8bdab3",
+            "secondary": "#88d7b0",
+            "primary": "#ffb2b7",
+            "on-tertiary-container": "#c0c2c3",
+            "on-tertiary": "#2e3132",
+            "secondary-container": "#006143",
+            "secondary-fixed-dim": "#88d7b0",
+            "on-surface-variant": "#dbc0c1",
+            "tertiary": "#c5c7c8",
+            "on-tertiary-fixed-variant": "#454748",
+            "on-secondary-fixed": "#002114",
+            "tertiary-container": "#4d5051",
+            "surface-container-lowest": "#0d0e10",
+            "on-primary-container": "#ffacb1",
+            "error-container": "#93000a",
+            "surface": "#121315",
+            "error": "#ffb4ab",
+            "surface-container-highest": "#343537",
+            "surface-container-low": "#1b1c1e",
+            "outline-variant": "#554243",
+            "on-primary-fixed": "#40000d",
+            "inverse-primary": "#9f3d49",
+            "on-secondary-fixed-variant": "#005137"
+          },
+          fontFamily: {
+            headline: ["Inter", "sans-serif"],
+            display: ["Inter", "sans-serif"],
+            body: ["Inter", "sans-serif"],
+            label: ["Public Sans", "sans-serif"],
+            mono: ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    /* Design System Rules: Frosted glass without borders, zero glow, no neon */
+    .frosted-glass {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.015));
+      backdrop-filter: blur(24px) saturate(130%);
+      -webkit-backdrop-filter: blur(24px) saturate(130%);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+      border: none !important;
+    }
+    .frosted-glass-subtle {
+      background: rgba(255, 255, 255, 0.025);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: none !important;
+    }
+    /* Hide scrollbars cleanly */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0d0e10;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #292a2c;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface font-body antialiased min-h-screen selection:bg-primary-container selection:text-white">
+<!-- TopNavBar (Shared Component from JSON) -->
+<header class="fixed top-0 left-0 w-full z-50 bg-surface/80 dark:bg-surface/80 backdrop-blur-md shadow-sm">
+<div class="max-w-7xl mx-auto px-6 lg:px-12 py-3.5 flex items-center justify-between">
+<!-- Brand Logo / Product Name -->
+<a class="font-headline text-base font-semibold tracking-tight text-on-surface dark:text-on-surface flex items-center gap-2.5" href="#">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container inline-block"></span>
+<span>RadarFusion Capstone</span>
+</a>
+<!-- Desktop Navigation Links -->
+<nav class="hidden md:flex items-center gap-8 font-headline text-sm font-semibold tracking-tight">
+<a class="text-tertiary dark:text-tertiary font-normal hover:text-on-surface dark:hover:text-on-surface transition-colors duration-150" href="#">Overview</a>
+<a class="text-tertiary dark:text-tertiary font-normal hover:text-on-surface dark:hover:text-on-surface transition-colors duration-150" href="#">Tech Compare</a>
+<a class="text-on-surface dark:text-on-surface font-medium hover:text-on-surface transition-colors duration-150" href="#">Fusion Logic</a>
+<a class="text-tertiary dark:text-tertiary font-normal hover:text-on-surface dark:hover:text-on-surface transition-colors duration-150" href="#">Hardware &amp; Power</a>
+<a class="text-tertiary dark:text-tertiary font-normal hover:text-on-surface dark:hover:text-on-surface transition-colors duration-150" href="#">Telemetry</a>
+</nav>
+<!-- Trailing Action Cluster -->
+<div class="flex items-center gap-3">
+<a class="hidden sm:inline-flex items-center justify-center text-xs font-medium tracking-tight px-3.5 py-1.5 rounded-lg bg-surface-container-high text-on-surface hover:bg-surface-variant transition-colors duration-150" href="#technical-spec">
+          Technical Spec
+        </a>
+<a class="hidden sm:inline-flex items-center justify-center text-xs font-medium tracking-tight px-3.5 py-1.5 rounded-lg text-tertiary hover:text-on-surface hover:bg-surface-container transition-colors duration-150" href="https://github.com" rel="noopener noreferrer" target="_blank">
+          GitHub
+        </a>
+<button aria-label="Terminal Console" class="p-1.5 rounded-lg text-tertiary hover:text-on-surface hover:bg-surface-container transition-colors duration-150" type="button">
+<span class="material-symbols-outlined text-[18px]">terminal</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-28 pb-20 px-6 lg:px-12 max-w-7xl mx-auto space-y-24">
+<!-- 1. Hero Section -->
+<section class="space-y-8 pt-4">
+<div class="space-y-4 max-w-4xl">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container text-[11px] font-mono tracking-wider uppercase text-tertiary">
+<span class="w-1.5 h-1.5 rounded-full bg-primary-container"></span>
+          ADVANCED RF SIGNAL PROCESSING &amp; ESTIMATION THEORY
+        </div>
+<h1 class="text-4xl sm:text-5xl lg:text-6xl font-headline font-semibold text-on-surface tracking-tight leading-[1.08]">
+          From FMCW Beat Frequencies to Extended Kalman State Estimation.
+        </h1>
+<p class="text-base sm:text-lg text-tertiary max-w-[64ch] leading-relaxed">
+          De-chirping RF chirps down to intermediate beat signals, feature-extracting micro-Doppler signatures via edge TinyML, and bounding tracking uncertainty with 3D Extended Kalman Filter (EKF) covariance geometry.
+        </p>
+</div>
+<!-- Hero Metric Badges -->
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
+<div class="frosted-glass p-5 rounded-2xl">
+<div class="text-[11px] font-mono text-tertiary uppercase tracking-wider mb-1">Chirp Bandwidth</div>
+<div class="text-2xl font-mono font-semibold text-on-surface">4 GHz</div>
+<div class="text-xs text-tertiary mt-1">60 GHz FMCW LD6003D Ramp</div>
+</div>
+<div class="frosted-glass p-5 rounded-2xl">
+<div class="text-[11px] font-mono text-tertiary uppercase tracking-wider mb-1">Range Resolution</div>
+<div class="text-2xl font-mono font-semibold text-secondary">3.75 cm</div>
+<div class="text-xs text-tertiary mt-1">ΔR = c / (2 · B) theoretical</div>
+</div>
+<div class="frosted-glass p-5 rounded-2xl">
+<div class="text-[11px] font-mono text-tertiary uppercase tracking-wider mb-1">State Propagation</div>
+<div class="text-2xl font-mono font-semibold text-on-surface">32-state EKF</div>
+<div class="text-xs text-tertiary mt-1">240 MHz Dual-Core ESP32-S3</div>
+</div>
+<div class="frosted-glass p-5 rounded-2xl">
+<div class="text-[11px] font-mono text-tertiary uppercase tracking-wider mb-1">Kinematic Lock</div>
+<div class="text-2xl font-mono font-semibold text-primary">σ &lt; 1.8 cm</div>
+<div class="text-xs text-tertiary mt-1">Fused posterior 3D envelope</div>
+</div>
+</div>
+</section>
+<!-- 2. Interactive Visual: FMCW Wave Physics & IF Mixer Beat Frequency -->
+<section class="space-y-6">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<div class="text-xs font-mono uppercase tracking-wider text-tertiary mb-1">PHY-LAYER DE-CHIRPING ENGINE</div>
+<h2 class="text-2xl sm:text-3xl font-headline font-semibold text-on-surface">FMCW Waveform Physics &amp; IF Beat Downconversion</h2>
+</div>
+<div class="flex items-center gap-6 text-xs font-mono">
+<div class="flex items-center gap-2">
+<span class="w-3 h-0.5 bg-primary-container"></span>
+<span class="text-on-surface-variant">Tx Chirp f(t)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-0.5 bg-secondary-container"></span>
+<span class="text-secondary">Rx Echo f(t - τ)</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-0.5 bg-white"></span>
+<span class="text-on-surface">IF Beat (f_b)</span>
+</div>
+</div>
+</div>
+<!-- Main Graph and Math Panel -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Frequency vs Time Interactive SVG Graph -->
+<div class="lg:col-span-8 frosted-glass p-6 sm:p-8 rounded-3xl space-y-6">
+<div class="flex items-center justify-between">
+<div>
+<h3 class="text-sm font-semibold text-on-surface">Frequency vs. Time Chirp Trajectory</h3>
+<p class="text-xs text-tertiary">Homodyne Quadrature Mixer Output under Tau Delay (τ = 2R / c)</p>
+</div>
+<div class="text-right">
+<span class="font-mono text-xs text-secondary bg-surface-container px-2.5 py-1 rounded-md">Beat f_b = 64.2 kHz</span>
+</div>
+</div>
+<!-- Clean Minimal SVG Wave Canvas -->
+<div class="w-full h-72 rounded-2xl bg-surface-container-lowest/60 p-4 relative overflow-hidden flex flex-col justify-end">
+<!-- Grid lines -->
+<div class="absolute inset-0 grid grid-cols-6 grid-rows-4 pointer-events-none opacity-20">
+<div class="border-r border-surface-variant"></div>
+<div class="border-r border-surface-variant"></div>
+<div class="border-r border-surface-variant"></div>
+<div class="border-r border-surface-variant"></div>
+<div class="border-r border-surface-variant"></div>
+<div></div>
+</div>
+<svg class="w-full h-full" preserveaspectratio="none" viewbox="0 0 800 240">
+<!-- Slope guide fills -->
+<polygon fill="rgba(140, 47, 59, 0.04)" points="60,200 740,40 740,200"></polygon>
+<!-- Transmitted Chirp (Tx) Maroon Line -->
+<path d="M 60 200 L 740 40" stroke="#8C2F3B" stroke-linecap="round" stroke-width="2.5"></path>
+<!-- Received Reflection Chirp (Rx) Muted Green Line delayed by tau -->
+<path d="M 120 200 L 800 40" stroke="#4E7D63" stroke-dasharray="4 3" stroke-linecap="round" stroke-width="2.5"></path>
+<!-- Frequency delta markers (Delta f_b) -->
+<line stroke="#F2F3F4" stroke-width="1.5" x1="420" x2="420" y1="115" y2="135"></line>
+<circle cx="420" cy="115" fill="#8C2F3B" r="3"></circle>
+<circle cx="420" cy="135" fill="#4E7D63" r="3"></circle>
+<text fill="#F2F3F4" font-family="JetBrains Mono" font-size="11" x="432" y="129">Δf = f_b</text>
+<!-- Delay marker tau -->
+<line stroke="#A7ABB0" stroke-width="1" x1="60" x2="120" y1="205" y2="205"></line>
+<line stroke="#A7ABB0" stroke-width="1" x1="60" x2="60" y1="200" y2="210"></line>
+<line stroke="#A7ABB0" stroke-width="1" x1="120" x2="120" y1="200" y2="210"></line>
+<text fill="#A7ABB0" font-family="JetBrains Mono" font-size="10" x="78" y="222">τ = 2R/c</text>
+<!-- Constant Beat Waveform in Lower Quarter -->
+<path d="M 60 175 Q 75 160 90 175 T 120 175 T 150 175 T 180 175 T 210 175 T 240 175 T 270 175 T 300 175 T 330 175 T 360 175 T 390 175 T 420 175 T 450 175 T 480 175 T 510 175 T 540 175 T 570 175 T 600 175 T 630 175 T 660 175 T 690 175 T 720 175 T 750 175" fill="none" opacity="0.75" stroke="#F2F3F4" stroke-width="1.2"></path>
+</svg>
+<!-- Axis Labels -->
+<div class="flex justify-between items-center text-[10px] font-mono text-tertiary pt-2 border-t border-surface-container">
+<span>t = 0 (Start of Sweep)</span>
+<span>Chirp Ramp Time T_chirp = 50 µs</span>
+<span>Slope S = 80 MHz/µs</span>
+</div>
+</div>
+<!-- Range Bin FFT Spectrum Output -->
+<div class="space-y-2">
+<div class="flex justify-between text-xs font-mono text-tertiary">
+<span>Range Bin Decomposed Spectrum (1D-FFT |X[k]|)</span>
+<span class="text-on-surface font-semibold">Primary Target: Bin #48 (3.60 m)</span>
+</div>
+<div class="h-14 bg-surface-container-lowest/50 rounded-xl flex items-end gap-1.5 p-2.5">
+<!-- Spectrum bars minimal rendering -->
+<div class="w-full flex items-end justify-between h-full gap-1">
+<div class="w-1 bg-surface-variant h-2 rounded-t"></div>
+<div class="w-1 bg-surface-variant h-3 rounded-t"></div>
+<div class="w-1 bg-surface-variant h-2 rounded-t"></div>
+<div class="w-1 bg-surface-variant h-4 rounded-t"></div>
+<div class="w-1 bg-primary-container h-5 rounded-t"></div>
+<div class="w-1 bg-surface-variant h-3 rounded-t"></div>
+<div class="w-1 bg-surface-variant h-4 rounded-t"></div>
+<div class="w-1 bg-surface-variant h-2 rounded-t"></div>
+<div class="w-1 bg-surface-variant h-6 rounded-t"></div>
+<div class="w-1 bg-secondary-container h-8 rounded-t"></div>
+<div class="w-1 bg-surface-variant h-5 rounded-t"></div>
+<div class="w-1 bg-surface-variant h-3 rounded-t"></div>
+<div class="w-1.5 bg-on-surface h-full rounded-t shadow-none"></div>
+<div class="w-1 bg-surface-variant h-4 rounded-t"></div>
+<div class="w-1 bg-surface-variant h-3 rounded-t"></div>
+<div class="w-1 bg-surface-variant h-2 rounded-t"></div>
+<div class="w-1 bg-surface-variant h-3 rounded-t"></div>
+<div class="w-1 bg-surface-variant h-2 rounded-t"></div>
+<div class="w-1 bg-surface-variant h-1 rounded-t"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- FMCW Downconversion Physics Parameters -->
+<div class="lg:col-span-4 frosted-glass p-6 sm:p-8 rounded-3xl space-y-6 flex flex-col justify-between">
+<div class="space-y-4">
+<h3 class="text-sm font-semibold text-on-surface">Homodyne Analytical Formulation</h3>
+<div class="bg-surface-container-lowest/70 p-4 rounded-xl space-y-2">
+<div class="text-[11px] font-mono text-tertiary">Beat Frequency Formula:</div>
+<div class="text-xs font-mono text-on-surface font-semibold tracking-tight">
+                f_b = S · (2R / c) + (2v_r / λ)
+              </div>
+<p class="text-[11px] text-tertiary leading-normal pt-1">
+                Where <span class="font-mono text-on-surface">S = B / T_c</span> is chirp slope, <span class="font-mono text-on-surface">R</span> is radial range, and <span class="font-mono text-on-surface">v_r</span> is Doppler velocity component.
+              </p>
+</div>
+<div class="bg-surface-container-lowest/70 p-4 rounded-xl space-y-2">
+<div class="text-[11px] font-mono text-tertiary">Range Resolution Limit:</div>
+<div class="text-xs font-mono text-on-surface font-semibold tracking-tight">
+                ΔR = c / (2 · B) = 3.0e8 / (2 · 4.0e9) = 3.75 cm
+              </div>
+<p class="text-[11px] text-tertiary leading-normal pt-1">
+                4 GHz wide sweep bandwidth on LD6003D yields sub-4cm separability of point-cloud centroids.
+              </p>
+</div>
+<div class="bg-surface-container-lowest/70 p-4 rounded-xl space-y-2">
+<div class="text-[11px] font-mono text-tertiary">Max Unambiguous Velocity:</div>
+<div class="text-xs font-mono text-on-surface font-semibold tracking-tight">
+                v_max = λ / (4 · T_chirp) = 5.0 mm / (4 · 50 µs) = 25.0 m/s
+              </div>
+</div>
+</div>
+<div class="pt-2">
+<div class="text-xs font-mono text-tertiary flex items-center justify-between py-1.5 border-b border-surface-container">
+<span>Sampling ADC</span>
+<span class="text-on-surface font-semibold">12-bit Dual I/Q @ 5 MSPS</span>
+</div>
+<div class="text-xs font-mono text-tertiary flex items-center justify-between py-1.5">
+<span>IF Filter Roll-off</span>
+<span class="text-on-surface font-semibold">5th Order Chebyshev (4.2 MHz)</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- 3. Micro-Doppler & Edge TinyML Ingestion -->
+<section class="space-y-6">
+<div class="space-y-1">
+<div class="text-xs font-mono uppercase tracking-wider text-tertiary">NEURAL SPECTRAL FEATURE INFERENCE</div>
+<h2 class="text-2xl sm:text-3xl font-headline font-semibold text-on-surface">Micro-Doppler Spectrograms &amp; Edge TinyML</h2>
+<p class="text-sm text-tertiary max-w-[62ch]">
+          Fusing continuous-wave Doppler returns (HLK-LD2452 @ 24 GHz) with 3D point-cloud velocity clusters (HLK-LD6003D @ 60 GHz) through a quantized 1D-CNN + GRU model for human kinematic activity classification.
+        </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Cadence Card -->
+<div class="frosted-glass p-6 rounded-3xl space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono text-primary uppercase">Cluster A // Gait Profile</span>
+<span class="text-[11px] font-mono bg-surface-container px-2 py-0.5 rounded text-tertiary">98.4% Acc</span>
+</div>
+<h4 class="text-lg font-headline font-semibold text-on-surface">Walking Cadence</h4>
+<p class="text-xs text-tertiary leading-relaxed">
+            Main torso velocity envelope surrounded by alternating limb micro-Doppler harmonics at 1.8 Hz cadence period.
+          </p>
+<div class="h-28 bg-surface-container-lowest/60 rounded-xl p-3 flex flex-col justify-end">
+<!-- Simulated micro-doppler spectrogram lines -->
+<div class="space-y-1.5 w-full">
+<div class="h-1 bg-surface-variant rounded w-full"></div>
+<div class="h-1.5 bg-primary-container rounded w-4/5 mx-auto"></div>
+<div class="h-2 bg-on-surface/80 rounded w-2/3 mx-auto"></div>
+<div class="h-1.5 bg-secondary-container rounded w-3/4 mx-auto"></div>
+<div class="h-1 bg-surface-variant rounded w-full"></div>
+</div>
+<div class="flex justify-between text-[10px] font-mono text-tertiary mt-3">
+<span>0 Hz Center</span>
+<span>±1.8 m/s Limb Wings</span>
+</div>
+</div>
+</div>
+<!-- Thoracic Card -->
+<div class="frosted-glass p-6 rounded-3xl space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono text-secondary uppercase">Cluster B // Vital Signs</span>
+<span class="text-[11px] font-mono bg-surface-container px-2 py-0.5 rounded text-tertiary">0.24 Hz Peak</span>
+</div>
+<h4 class="text-lg font-headline font-semibold text-on-surface">Thoracic Micro-Oscillation</h4>
+<p class="text-xs text-tertiary leading-relaxed">
+            Respiratory phase displacement of chest wall with sub-millimeter amplitude extracted via phase unwrapping: Δφ = 4π · ΔR / λ.
+          </p>
+<div class="h-28 bg-surface-container-lowest/60 rounded-xl p-3 flex flex-col justify-center">
+<svg class="w-full h-10" viewbox="0 0 200 40">
+<path d="M 0 20 Q 25 5 50 20 T 100 20 T 150 20 T 200 20" fill="none" stroke="#4E7D63" stroke-width="2"></path>
+</svg>
+<div class="flex justify-between text-[10px] font-mono text-tertiary mt-1">
+<span>Normal Tidal: 14.2 BPM</span>
+<span>Amp: 0.82 mm</span>
+</div>
+</div>
+</div>
+<!-- Fall Transient Card -->
+<div class="frosted-glass p-6 rounded-3xl space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-xs font-mono text-primary uppercase">Cluster C // Anomaly Transient</span>
+<span class="text-[11px] font-mono bg-surface-container px-2 py-0.5 rounded text-primary">T_resp &lt; 85ms</span>
+</div>
+<h4 class="text-lg font-headline font-semibold text-on-surface">Sudden Fall Deceleration</h4>
+<p class="text-xs text-tertiary leading-relaxed">
+            High-amplitude negative vertical velocity spike exceeding -3.2 m/s followed by prolonged zero-velocity post-impact state.
+          </p>
+<div class="h-28 bg-surface-container-lowest/60 rounded-xl p-3 flex flex-col justify-end">
+<svg class="w-full h-12" viewbox="0 0 200 40">
+<path d="M 0 10 L 80 10 L 100 35 L 120 38 L 130 38 L 200 38" fill="none" stroke="#8C2F3B" stroke-width="2"></path>
+</svg>
+<div class="flex justify-between text-[10px] font-mono text-tertiary mt-2">
+<span>Threshold Trigger</span>
+<span>Impact: 4.8 G-equivalent</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Edge Model Architecture & Quantization Metrics -->
+<div class="frosted-glass p-6 sm:p-8 rounded-3xl grid grid-cols-2 md:grid-cols-4 gap-6 text-xs font-mono">
+<div>
+<div class="text-tertiary uppercase text-[10px]">Model Structure</div>
+<div class="text-sm font-semibold text-on-surface mt-1">1D-CNN (3L) + GRU (32)</div>
+<div class="text-tertiary mt-0.5">Dual-Head Softmax</div>
+</div>
+<div>
+<div class="text-tertiary uppercase text-[10px]">Quantization Format</div>
+<div class="text-sm font-semibold text-secondary mt-1">INT8 Symmetric (TFLM)</div>
+<div class="text-tertiary mt-0.5">Zero Accuracy Degradation</div>
+</div>
+<div>
+<div class="text-tertiary uppercase text-[10px]">SRAM Footprint</div>
+<div class="text-sm font-semibold text-on-surface mt-1">42.8 KB Internal DRAM</div>
+<div class="text-tertiary mt-0.5">Zero external PSRAM stall</div>
+</div>
+<div>
+<div class="text-tertiary uppercase text-[10px]">Inference Latency</div>
+<div class="text-sm font-semibold text-primary mt-1">4.62 ms / Frame</div>
+<div class="text-tertiary mt-0.5">Executes on ESP32 Core 0</div>
+</div>
+</div>
+</section>
+<!-- 4. EKF Covariance Ellipses & State Tracking -->
+<section class="space-y-6">
+<div class="space-y-1">
+<div class="text-xs font-mono uppercase tracking-wider text-tertiary">NON-LINEAR KINEMATIC PROPAGATION</div>
+<h2 class="text-2xl sm:text-3xl font-headline font-semibold text-on-surface">3D Extended Kalman Filter State Estimation</h2>
+<p class="text-sm text-tertiary max-w-[62ch]">
+          Tracking uncertainty bounding using recursive state prediction and measurement updates across disparate coordinate frames and asynchronous sampling intervals.
+        </p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Covariance Convergence Visual Canvas -->
+<div class="lg:col-span-7 frosted-glass p-6 sm:p-8 rounded-3xl space-y-6 flex flex-col justify-between">
+<div>
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-sm font-semibold text-on-surface">Spatial Covariance Ellipse Contraction</h3>
+<span class="text-xs font-mono text-tertiary">3D Cartesian Projection (X-Y)</span>
+</div>
+<div class="w-full h-80 rounded-2xl bg-surface-container-lowest/60 p-6 relative flex items-center justify-center overflow-hidden">
+<!-- Coordinate Crosshairs -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+<div class="w-full h-px bg-surface-variant opacity-40"></div>
+<div class="h-full w-px bg-surface-variant opacity-40 absolute"></div>
+</div>
+<!-- Covariance Ellipses contracting -->
+<!-- Step 1: Initial wide search gate -->
+<div class="absolute w-64 h-48 rounded-full border border-surface-variant/40 rotate-12 flex items-start justify-end p-2 pointer-events-none">
+<span class="text-[10px] font-mono text-tertiary">k=0 (Search Gate R=0.5m)</span>
+</div>
+<!-- Step 2: 24 GHz First Update -->
+<div class="absolute w-40 h-28 rounded-full border border-primary-container/60 -rotate-6 flex items-start justify-end p-1 pointer-events-none">
+<span class="text-[10px] font-mono text-primary">k=1 (LD2452 Range)</span>
+</div>
+<!-- Step 3: 60 GHz Azimuth + Elevation Update -->
+<div class="absolute w-20 h-16 rounded-full border border-secondary-container/70 rotate-3 flex items-start justify-end p-1 pointer-events-none">
+<span class="text-[10px] font-mono text-secondary">k=2 (LD6003D 3D)</span>
+</div>
+<!-- Fused Kinematic Lock State Point -->
+<div class="relative z-10 flex flex-col items-center">
+<div class="w-4 h-4 rounded-full bg-white flex items-center justify-center">
+<div class="w-1.5 h-1.5 rounded-full bg-surface-container-lowest"></div>
+</div>
+<span class="text-[11px] font-mono text-on-surface font-semibold mt-2 bg-surface-container px-2 py-0.5 rounded">
+                  Fused State x̂_k
+                </span>
+<span class="text-[10px] font-mono text-secondary mt-0.5">σ_xyz = ±1.4 cm</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-3 gap-4 pt-4 border-t border-surface-container text-xs font-mono">
+<div>
+<div class="text-tertiary text-[10px]">State Vector Dimension</div>
+<div class="text-on-surface font-semibold mt-1">9-DOF Kinematics</div>
+</div>
+<div>
+<div class="text-tertiary text-[10px]">Innovation Gate (χ²)</div>
+<div class="text-secondary font-semibold mt-1">d² &lt; 7.815 (95% CI)</div>
+</div>
+<div>
+<div class="text-tertiary text-[10px]">Sensor Clutter Rejection</div>
+<div class="text-on-surface font-semibold mt-1">Mahalanobis Bounding</div>
+</div>
+</div>
+</div>
+<!-- Math & Formulation Panel -->
+<div class="lg:col-span-5 frosted-glass p-6 sm:p-8 rounded-3xl space-y-6">
+<h3 class="text-sm font-semibold text-on-surface">Algorithmic Formulation</h3>
+<div class="space-y-4 text-xs font-mono">
+<!-- 9-DOF State Vector -->
+<div class="bg-surface-container-lowest/70 p-4 rounded-xl space-y-2">
+<span class="text-[10px] text-tertiary block">9-STATE VECTOR FORMULATION</span>
+<div class="text-on-surface leading-loose font-semibold">
+                x_k = [x, y, z, v_x, v_y, v_z, a_x, a_y, a_z]^T
+              </div>
+</div>
+<!-- Predict Equation -->
+<div class="bg-surface-container-lowest/70 p-4 rounded-xl space-y-2">
+<span class="text-[10px] text-tertiary block">TIME PREDICTION STEP</span>
+<div class="text-on-surface leading-relaxed">
+                x̂_k|k-1 = F_k · x̂_k-1|k-1<br/>
+                P_k|k-1 = F_k · P_k-1|k-1 · F_k^T + Q_k
+              </div>
+<p class="text-[11px] text-tertiary font-body pt-1">
+                Where Q_k is the continuous Wiener-process acceleration noise covariance matrix.
+              </p>
+</div>
+<!-- Measurement Update -->
+<div class="bg-surface-container-lowest/70 p-4 rounded-xl space-y-2">
+<span class="text-[10px] text-tertiary block">MEASUREMENT UPDATE (ASYNC SENSOR INPUT)</span>
+<div class="text-on-surface leading-relaxed">
+                ỹ_k = z_k - h(x̂_k|k-1)<br/>
+                S_k = H_k · P_k|k-1 · H_k^T + R_k<br/>
+                K_k = P_k|k-1 · H_k^T · S_k^(-1)<br/>
+                x̂_k|k = x̂_k|k-1 + K_k · ỹ_k<br/>
+                P_k|k = (I - K_k · H_k) · P_k|k-1
+              </div>
+</div>
+</div>
+<div class="p-3 rounded-xl bg-surface-container text-xs text-tertiary flex items-start gap-2.5">
+<span class="material-symbols-outlined text-secondary text-base">verified</span>
+<span class="text-[11px] leading-relaxed">
+              Asynchronous non-blocking updates: LD2452 feeds at 10 Hz with range-only H_1D, while LD6003D updates at 20 Hz with 3D polar Cartesian Jacobian H_3D.
+            </span>
+</div>
+</div>
+</div>
+</section>
+<!-- 5. Bus Timing & FreeRTOS Dual-Core Inter-Processor Synchronization -->
+<section class="space-y-6">
+<div class="space-y-1">
+<div class="text-xs font-mono uppercase tracking-wider text-tertiary">REAL-TIME EMBEDDED CONCURRENCY</div>
+<h2 class="text-2xl sm:text-3xl font-headline font-semibold text-on-surface">Bus Timing &amp; Dual-Core Concurrency</h2>
+<p class="text-sm text-tertiary max-w-[62ch]">
+          Microsecond-scale trace of DMA transfers, interrupt handlers, zero-copy lock-free ring buffers, and core pinning on the ESP32-S3 (Xtensa Dual-Core 240 MHz).
+        </p>
+</div>
+<div class="frosted-glass p-6 sm:p-8 rounded-3xl space-y-8">
+<!-- Timing Diagram Visual Bars -->
+<div class="space-y-4">
+<div class="flex items-center justify-between text-xs font-mono text-tertiary">
+<span>Hardware Timing Trace Window (100 ms Frame Interval)</span>
+<span>Zero Deadlock Guaranteed</span>
+</div>
+<div class="space-y-3 font-mono text-xs">
+<!-- Channel 1: LD2452 UART1 DMA -->
+<div class="grid grid-cols-12 items-center gap-2">
+<div class="col-span-3 text-tertiary truncate">UART1 (LD2452 @ 115k)</div>
+<div class="col-span-9 h-7 bg-surface-container-lowest rounded-lg p-1 flex items-center">
+<div class="w-16 h-full bg-primary-container/80 rounded flex items-center justify-center text-[10px] text-white">DMA RX (8.6ms)</div>
+<div class="w-32"></div>
+<div class="w-16 h-full bg-primary-container/80 rounded flex items-center justify-center text-[10px] text-white">DMA RX</div>
+</div>
+</div>
+<!-- Channel 2: LD6003D UART2 DMA -->
+<div class="grid grid-cols-12 items-center gap-2">
+<div class="col-span-3 text-tertiary truncate">UART2 (LD6003D @ 256k)</div>
+<div class="col-span-9 h-7 bg-surface-container-lowest rounded-lg p-1 flex items-center">
+<div class="w-28 h-full bg-secondary-container/90 rounded flex items-center justify-center text-[10px] text-white">PointCloud Stream (14.2ms)</div>
+<div class="w-12"></div>
+<div class="w-28 h-full bg-secondary-container/90 rounded flex items-center justify-center text-[10px] text-white">PointCloud Stream</div>
+</div>
+</div>
+<!-- Channel 3: Core 0 IRQ & Parser -->
+<div class="grid grid-cols-12 items-center gap-2">
+<div class="col-span-3 text-tertiary truncate">Core 0 (Parser + TinyML)</div>
+<div class="col-span-9 h-7 bg-surface-container-lowest rounded-lg p-1 flex items-center">
+<div class="w-6"></div>
+<div class="w-20 h-full bg-surface-variant rounded flex items-center justify-center text-[10px] text-on-surface">Unpack Frame</div>
+<div class="w-2"></div>
+<div class="w-24 h-full bg-surface-variant rounded flex items-center justify-center text-[10px] text-on-surface">1D-CNN (4.6ms)</div>
+<div class="w-4"></div>
+<div class="w-12 h-full bg-surface-variant rounded flex items-center justify-center text-[10px] text-on-surface">RingBuf Push</div>
+</div>
+</div>
+<!-- Channel 4: Core 1 EKF Task -->
+<div class="grid grid-cols-12 items-center gap-2">
+<div class="col-span-3 text-tertiary truncate">Core 1 (EKF Math 32-st)</div>
+<div class="col-span-9 h-7 bg-surface-container-lowest rounded-lg p-1 flex items-center">
+<div class="w-36"></div>
+<div class="w-32 h-full bg-on-surface text-surface-container-lowest font-semibold rounded flex items-center justify-center text-[10px]">
+                  Matrix Inversion &amp; Fusion (7.8ms)
+                </div>
+</div>
+</div>
+<!-- Channel 5: SPI Display Flush -->
+<div class="grid grid-cols-12 items-center gap-2">
+<div class="col-span-3 text-tertiary truncate">SPI DMA (Display/Telemetry)</div>
+<div class="col-span-9 h-7 bg-surface-container-lowest rounded-lg p-1 flex items-center">
+<div class="w-72"></div>
+<div class="w-24 h-full bg-surface-variant/80 rounded flex items-center justify-center text-[10px] text-tertiary">SPI TX (12ms)</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Concurrency Specs & RingBuffer Safety Metrics -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-surface-container">
+<div class="p-4 rounded-2xl bg-surface-container-lowest/50 space-y-1">
+<div class="text-[11px] font-mono text-tertiary">IPC Mechanism</div>
+<div class="text-sm font-semibold text-on-surface">Zero-Copy RingBuffer</div>
+<div class="text-xs text-tertiary">Atomic atomic_flag Mutex-free</div>
+</div>
+<div class="p-4 rounded-2xl bg-surface-container-lowest/50 space-y-1">
+<div class="text-[11px] font-mono text-tertiary">Buffer Overrun Bound</div>
+<div class="text-sm font-semibold text-secondary">0 Overruns @ 200 Hz</div>
+<div class="text-xs text-tertiary">Depth: 16 packets max</div>
+</div>
+<div class="p-4 rounded-2xl bg-surface-container-lowest/50 space-y-1">
+<div class="text-[11px] font-mono text-tertiary">Interrupt Latency</div>
+<div class="text-sm font-semibold text-on-surface">1.25 µs Level-5 IRQ</div>
+<div class="text-xs text-tertiary">Direct DMA vector dispatch</div>
+</div>
+<div class="p-4 rounded-2xl bg-surface-container-lowest/50 space-y-1">
+<div class="text-[11px] font-mono text-tertiary">Real-Time Core Load</div>
+<div class="text-sm font-semibold text-primary">Core 0: 38% | Core 1: 52%</div>
+<div class="text-xs text-tertiary">Headroom for sensor expansions</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Technical Spec Anchor Target Section -->
+<section class="frosted-glass p-8 sm:p-12 rounded-3xl space-y-8" id="technical-spec">
+<div class="max-w-3xl space-y-2">
+<div class="text-xs font-mono uppercase tracking-wider text-tertiary">IEEE / MIT MEDIA LAB SPECIFICATION</div>
+<h3 class="text-2xl font-headline font-semibold text-on-surface">Dual Radar System Hardware Architecture Reference</h3>
+<p class="text-sm text-tertiary leading-relaxed">
+          Physical interface pinout, power domain breakdown, and clock tree routing between the HLK-LD2452 (24 GHz), HLK-LD6003D (60 GHz), and ESP32-S3 host board.
+        </p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-xs font-mono">
+<div class="space-y-3">
+<div class="text-sm font-semibold text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+            HLK-LD2452 (24 GHz CW/FSK Doppler)
+          </div>
+<div class="bg-surface-container-lowest/70 rounded-2xl p-4 space-y-2">
+<div class="flex justify-between py-1 border-b border-surface-container">
+<span class="text-tertiary">Operating Frequency</span>
+<span class="text-on-surface">24.000 – 24.250 GHz (ISM)</span>
+</div>
+<div class="flex justify-between py-1 border-b border-surface-container">
+<span class="text-tertiary">Detection Range / FOV</span>
+<span class="text-on-surface">0.15 m – 6.00 m (±60° Azimuth)</span>
+</div>
+<div class="flex justify-between py-1 border-b border-surface-container">
+<span class="text-tertiary">UART Interface</span>
+<span class="text-on-surface">GPIO 17 (TX), GPIO 18 (RX) @ 115,200 bps</span>
+</div>
+<div class="flex justify-between py-1">
+<span class="text-tertiary">Power Consumption</span>
+<span class="text-primary font-semibold">5.0V @ 72 mA (360 mW)</span>
+</div>
+</div>
+</div>
+<div class="space-y-3">
+<div class="text-sm font-semibold text-on-surface flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary-container"></span>
+            HLK-LD6003D (60 GHz 3D Point-Cloud FMCW)
+          </div>
+<div class="bg-surface-container-lowest/70 rounded-2xl p-4 space-y-2">
+<div class="flex justify-between py-1 border-b border-surface-container">
+<span class="text-tertiary">Operating Frequency</span>
+<span class="text-on-surface">58.000 – 62.000 GHz (4 GHz BW)</span>
+</div>
+<div class="flex justify-between py-1 border-b border-surface-container">
+<span class="text-tertiary">Angular Precision</span>
+<span class="text-on-surface">±2.5° Azimuth, ±3.0° Elevation</span>
+</div>
+<div class="flex justify-between py-1 border-b border-surface-container">
+<span class="text-tertiary">UART Interface</span>
+<span class="text-on-surface">GPIO 43 (TX), GPIO 44 (RX) @ 256,000 bps</span>
+</div>
+<div class="flex justify-between py-1">
+<span class="text-tertiary">Power Consumption</span>
+<span class="text-secondary font-semibold">3.3V @ 195 mA (643.5 mW)</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer (Shared Component from JSON) -->
+<footer class="w-full py-12 px-6 lg:px-12 max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6 bg-surface-container-lowest dark:bg-surface-container-lowest">
+<div class="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+<span class="font-headline text-sm font-semibold text-on-surface dark:text-on-surface">RadarFusion Capstone</span>
+<span class="hidden sm:inline text-tertiary">•</span>
+<p class="font-body text-xs text-tertiary dark:text-tertiary">
+        © 2025 Dual mmWave Radar Fusion System · HLK-LD2452 &amp; HLK-LD6003D Capstone Initiative
+      </p>
+</div>
+<!-- Footer Links from JSON -->
+<div class="flex flex-wrap justify-center items-center gap-6 font-body text-xs text-tertiary dark:text-tertiary">
+<a class="hover:text-on-surface dark:hover:text-on-surface transition-colors duration-150" href="#">Documentation</a>
+<a class="hover:text-on-surface dark:hover:text-on-surface transition-colors duration-150" href="#">Pinout Diagrams</a>
+<a class="hover:text-on-surface dark:hover:text-on-surface transition-colors duration-150" href="#">Power Budget</a>
+<a class="hover:text-on-surface dark:hover:text-on-surface transition-colors duration-150" href="#">Algorithm Math</a>
+<a class="hover:text-on-surface dark:hover:text-on-surface transition-colors duration-150" href="#">Faculty Advisory</a>
+</div>
+</footer>
+</body></html>

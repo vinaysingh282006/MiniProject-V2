@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulation Lab — Dual mmWave Radar Fusion System</title>
+  <meta name="description" content="Interactive browser simulation lab for Dual mmWave Radar Fusion (HLK-LD2452 24 GHz + HLK-LD6003D 60 GHz) with greedy association and geofence.">
+
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Theme Stylesheets -->
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/glass.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+</head>
+<body data-bg="waves">
+
+  <div id="scroll-progress"></div>
+  <canvas id="bg-canvas"></canvas>
+  <div class="vignette-overlay"></div>
+
+  <div class="page-wrapper page-fade">
+
+    <!-- Floating Navigation Bar -->
+    <header class="floating-nav glass">
+      <div class="nav-brand">
+        <span class="brand-indicator"></span>
+        <span>Radar Fusion OS</span>
+      </div>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="ml.html" class="nav-link">Machine Learning</a></li>
+          <li><a href="simulation.html" class="nav-link active">Simulation</a></li>
+          <li><a href="tech.html" class="nav-link">Tech & Architecture</a></li>
+          <li><a href="working.html" class="nav-link">Working & Demo</a></li>
+          <li><a href="upgrades.html" class="nav-link">Upgrades</a></li>
+          <li><a href="roadmap.html" class="nav-link">Roadmap</a></li>
+          <li><a href="thanks.html" class="nav-link">Viva & Thanks</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <button id="btn-sound-toggle" class="btn btn-secondary btn-sm">🔇 Sound</button>
+        <button class="nav-hamburger" aria-label="Toggle Navigation Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile Drawer -->
+    <div class="mobile-nav-drawer glass-solid">
+      <a href="index.html" class="nav-link">1. Overview</a>
+      <a href="ml.html" class="nav-link">2. Machine Learning</a>
+      <a href="simulation.html" class="nav-link active">3. Simulation Lab</a>
+      <a href="tech.html" class="nav-link">4. Tech & Architecture</a>
+      <a href="working.html" class="nav-link">5. Working & Demo</a>
+      <a href="upgrades.html" class="nav-link">6. Future Upgrades</a>
+      <a href="roadmap.html" class="nav-link">7. Project Roadmap</a>
+      <a href="thanks.html" class="nav-link">8. Viva & Thanks</a>
+    </div>
+
+    <main class="container" style="padding-top: 130px; padding-bottom: 80px;">
+
+      <!-- Header Intro -->
+      <section style="margin-bottom: 32px;">
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
+          <div>
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+              <span class="badge badge-fused">PAGE 03 / 08</span>
+              <span id="ws-status-badge" class="badge badge-maroon">SIMULATOR ACTIVE</span>
+            </div>
+            <h1 style="font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 8px;">Interactive Radar Simulation Lab</h1>
+            <p>Direct virtual sensor rig with realistic polar Gaussian noise, greedy nearest-neighbor clustering, geofence intrusion, and 30-byte hex decoding.</p>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button id="btn-export-csv" class="btn btn-secondary btn-sm">Export CSV</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Geofence Intrusion Banner -->
+      <div id="sim-alert-banner" class="glass glass-subtle text-mono" style="padding: 12px 20px; border-radius: var(--radius-md); margin-bottom: 24px; font-size: 0.875rem; text-align: center; color: var(--text-tertiary); transition: all 300ms ease;">
+        STATUS: NORMAL // GEOFENCE SECURE
+      </div>
+
+      <!-- Main Two-Column Simulator Layout -->
+      <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 28px; align-items: start;">
+        
+        <!-- Left Column: Polar Radar Sector Canvas -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          
+          <div class="glass" style="padding: 20px; border-radius: var(--radius-xl);">
+            <!-- Canvas Toolbar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+              <!-- Mode Selection -->
+              <div class="segmented-control">
+                <button class="segmented-btn" data-sim-mode="24G">24G Raw</button>
+                <button class="segmented-btn" data-sim-mode="60G">60G Cloud</button>
+                <button class="segmented-btn active" data-sim-mode="DUAL">DUAL FUSED</button>
+              </div>
+
+              <!-- Zoom Controls -->
+              <div class="segmented-control">
+                <button class="segmented-btn" data-sim-zoom="2">2m</button>
+                <button class="segmented-btn" data-sim-zoom="4">4m</button>
+                <button class="segmented-btn active" data-sim-zoom="6">6m</button>
+                <button class="segmented-btn" data-sim-zoom="8">8m</button>
+              </div>
+            </div>
+
+            <!-- Radar Viewport Canvas -->
+            <div style="position: relative; width: 100%; aspect-ratio: 4/3; border-radius: var(--radius-lg); overflow: hidden; background: rgba(14, 15, 17, 0.7); cursor: crosshair;">
+              <canvas id="sim-radar-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+            </div>
+
+            <!-- Canvas Instructions -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-tertiary);">
+              <span>&bull; Drag targets with cursor/touch.</span>
+              <span>&bull; Hold Shift + Drag to reshape Geofence box.</span>
+            </div>
+          </div>
+
+          <!-- Two Live Real-time Strip Charts -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">LIVE TIME-SERIES STRIP CHARTS &amp; DOPPLER STREAM (10 Hz)</span>
+              <span class="badge badge-green" style="font-size: 0.6875rem;">RING-BUFFER: 80 SAMPLES</span>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 16px;">
+              <div>
+                <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.75rem; margin-bottom: 6px;">
+                  <span style="color: var(--text-secondary);">Radial Distance</span>
+                  <span style="color: #FFF;">0 - 6.0 m</span>
+                </div>
+                <div style="height: 110px; width: 100%; background: rgba(0,0,0,0.3); border-radius: 8px; overflow: hidden;">
+                  <canvas id="chart-distance" style="width: 100%; height: 100%; display: block;"></canvas>
+                </div>
+              </div>
+
+              <div>
+                <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.75rem; margin-bottom: 6px;">
+                  <span style="color: var(--text-secondary);">Radial Velocity</span>
+                  <span style="color: var(--green-soft);">&plusmn;1.5 m/s</span>
+                </div>
+                <div style="height: 110px; width: 100%; background: rgba(0,0,0,0.3); border-radius: 8px; overflow: hidden;">
+                  <canvas id="chart-velocity" style="width: 100%; height: 100%; display: block;"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- Micro-Doppler Kinetic Stream Strip -->
+            <div>
+              <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.75rem; margin-bottom: 6px;">
+                <span style="color: var(--text-secondary);">Micro-Doppler Gait Carrier Shift [f<sub>d</sub> = 2v / &lambda;]</span>
+                <span style="color: var(--maroon-soft);">&plusmn;240 Hz Carrier Band</span>
+              </div>
+              <div style="height: 70px; width: 100%; background: rgba(0,0,0,0.4); border-radius: 8px; overflow: hidden; position: relative;">
+                <canvas id="chart-doppler-stream" style="width: 100%; height: 100%; display: block;"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- 30-Byte Real LD2452 Frame Hex Viewer -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-xl);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">SYNTHETIC 30-BYTE LD2452 FRAME STREAM</span>
+              <span class="badge badge-maroon">256,000 bps</span>
+            </div>
+            
+            <div id="sim-hex-grid" class="hex-grid" style="margin-bottom: 10px;"></div>
+
+            <!-- Byte Hover Tooltip -->
+            <div id="sim-hex-tooltip" class="text-mono" style="padding: 8px 12px; background: rgba(0,0,0,0.5); border-radius: 6px; font-size: 0.75rem; color: var(--text-secondary); display: none;">
+              Hover over any byte to view field decoding.
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right Column: Controls, Telemetry & Scoreboard -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          
+          <!-- Simulation Presets Card -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-xl);">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 14px;">SCENARIO PRESETS</span>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <button class="segmented-btn active" data-sim-preset="converge">Converge / Lock</button>
+              <button class="segmented-btn" data-sim-preset="ghost">Ghost Reflection</button>
+              <button class="segmented-btn" data-sim-preset="crossing">Two Crossing</button>
+              <button class="segmented-btn" data-sim-preset="stand">Still Person</button>
+              <button class="segmented-btn" data-sim-preset="circle">Orbit Walk</button>
+              <button class="segmented-btn" data-sim-preset="random">Random Walk</button>
+            </div>
+          </div>
+
+          <!-- Algorithm Tuner Sliders -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-xl);">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 16px;">FUSION CALIBRATION SLIDERS</span>
+
+            <!-- Threshold Distance Slider -->
+            <div class="slider-group">
+              <div class="slider-header">
+                <span class="slider-label">Association Threshold (d &le;)</span>
+                <span id="val-threshold" class="slider-value">0.50 m</span>
+              </div>
+              <input type="range" id="slider-threshold" min="0.10" max="1.00" step="0.05" value="0.50">
+              <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-tertiary);">Gating circle for greedy pairing</span>
+            </div>
+
+            <!-- Noise Factor Slider -->
+            <div class="slider-group" style="margin-bottom: 14px;">
+              <div class="slider-header">
+                <span class="slider-label">Sensor Polar Noise &sigma;</span>
+                <span id="val-noise" class="slider-value">1.0x</span>
+              </div>
+              <input type="range" id="slider-noise" min="0.2" max="2.5" step="0.1" value="1.0">
+              <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-tertiary);">Angular &amp; distance standard deviation</span>
+            </div>
+
+            <!-- Target RCS Slider -->
+            <div class="slider-group" style="margin-bottom: 14px;">
+              <div class="slider-header">
+                <span class="slider-label">Target Radar Cross Section (&sigma;<sub>rcs</sub>)</span>
+                <span id="val-rcs" class="slider-value">1.0 m&sup2;</span>
+              </div>
+              <input type="range" id="slider-rcs" min="0.1" max="5.0" step="0.1" value="1.0" style="accent-color: var(--green-soft);">
+              <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-tertiary);">0.1 m&sup2; (Pet) &bull; 1.0 m&sup2; (Human) &bull; 5.0 m&sup2; (Fan)</span>
+            </div>
+
+            <!-- Multipath Ghost Simulation Toggle -->
+            <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);">
+              <div>
+                <label for="toggle-ghost" class="text-mono" style="font-size: 0.75rem; color: #FFF; cursor: pointer; display: block;">Multipath Ghost Reflection</label>
+                <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-tertiary);">Simulate acoustic wall-bounce return</span>
+              </div>
+              <input type="checkbox" id="toggle-ghost" style="accent-color: var(--maroon-soft); cursor: pointer; width: 16px; height: 16px;">
+            </div>
+          </div>
+
+          <!-- Accuracy Scoreboard (RMSE vs Ground Truth) -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-xl);">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 16px;">ACCURACY SCOREBOARD (vs GROUND TRUTH)</span>
+
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <!-- 24G Score -->
+              <div>
+                <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.75rem; margin-bottom: 4px;">
+                  <span style="color: var(--maroon-soft);">24 GHz Sensor Alone</span>
+                  <span>RMSE: 0.28m &bull; 1 Ghost FP</span>
+                </div>
+                <div style="width: 100%; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.06); overflow: hidden;">
+                  <div style="width: 62%; height: 100%; background: var(--maroon-main);"></div>
+                </div>
+              </div>
+
+              <!-- 60G Score -->
+              <div>
+                <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.75rem; margin-bottom: 4px;">
+                  <span style="color: var(--green-soft);">60 GHz Sensor Alone</span>
+                  <span>RMSE: 0.12m &bull; Occasional Dropout</span>
+                </div>
+                <div style="width: 100%; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.06); overflow: hidden;">
+                  <div style="width: 82%; height: 100%; background: var(--green-main);"></div>
+                </div>
+              </div>
+
+              <!-- Fused Score -->
+              <div>
+                <div style="display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 0.75rem; margin-bottom: 4px;">
+                  <span style="color: #FFF; font-weight: 600;">DUAL FUSED RESULT</span>
+                  <span style="color: var(--green-soft); font-weight: 600;">RMSE: 0.05m &bull; ZERO FP</span>
+                </div>
+                <div style="width: 100%; height: 8px; border-radius: 4px; background: rgba(255,255,255,0.06); overflow: hidden;">
+                  <div style="width: 96%; height: 100%; background: #FFF;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Target Telemetry Table -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-xl); overflow-x: auto;">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 12px;">ACTIVE TARGET COORDINATES</span>
+            <table style="width: 100%; border-collapse: collapse; font-size: 0.8125rem; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); font-family: var(--font-mono); font-size: 0.6875rem; color: var(--text-tertiary);">
+                  <th style="padding: 6px 8px;">ID</th>
+                  <th style="padding: 6px 8px;">X</th>
+                  <th style="padding: 6px 8px;">Y</th>
+                  <th style="padding: 6px 8px;">DIST</th>
+                  <th style="padding: 6px 8px;">SPEED</th>
+                  <th style="padding: 6px 8px;">CONF</th>
+                </tr>
+              </thead>
+              <tbody id="sim-telemetry-tbody" style="color: var(--text-secondary);">
+                <!-- Dynamically injected -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Live Hardware Bridge Field -->
+          <div class="glass glass-subtle" style="padding: 20px; border-radius: var(--radius-xl);">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 8px;">OPTIONAL LIVE HARDWARE BRIDGE</span>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="ws-ip-input" placeholder="192.168.4.1" style="flex: 1; padding: 8px 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #FFF; font-family: var(--font-mono); font-size: 0.8125rem;">
+              <button id="btn-ws-connect" class="btn btn-primary btn-sm">Connect</button>
+            </div>
+            <span class="text-mono" style="font-size: 0.6875rem; color: var(--text-tertiary); margin-top: 6px; display: block;">Connects to real ESP32 ws://&lt;ip&gt;/ws stream.</span>
+          </div>
+
+          <!-- Event Log -->
+          <div class="glass" style="padding: 20px; border-radius: var(--radius-xl);">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 10px;">FIRMWARE EVENT LOG</span>
+            <div id="sim-log-list" style="max-height: 140px; overflow-y: auto; font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px;">
+              <!-- Logs injected -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- Footer Nav -->
+      <div class="page-footer-nav">
+        <a href="ml.html" class="footer-nav-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          <span>Prev: Machine Learning</span>
+        </a>
+        <span class="text-mono" style="font-size: 0.8125rem; color: var(--text-tertiary);">PAGE 03 / 08 &bull; SIMULATION</span>
+        <a href="tech.html" class="footer-nav-btn">
+          <span>Next: Tech &amp; Architecture</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p style="font-size: 0.8125rem; color: var(--text-tertiary); margin: 0 auto;">
+          Dual mmWave Radar Fusion System &bull; Engineering College Capstone Project &bull; PlatformIO / ESP32
+        </p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Shared Scripts -->
+  <script src="assets/js/core.js"></script>
+  <script src="assets/js/background.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script src="assets/js/charts.js"></script>
+  <script src="assets/js/simulation.js"></script>
+</body>
+</html>
+

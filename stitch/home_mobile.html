@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>RadarFusion · Dual mmWave Sensor Fusion Capstone</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Inter & JetBrains Mono Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;family=Public+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration verbatim from Design System tokens -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary-fixed-dim": "#ffb2b7",
+            "secondary": "#88d7b0",
+            "on-secondary-fixed-variant": "#005137",
+            "surface-dim": "#121315",
+            "primary": "#ffb2b7",
+            "on-tertiary-container": "#c0c2c3",
+            "on-tertiary": "#2e3132",
+            "secondary-container": "#006143",
+            "on-primary-fixed-variant": "#802633",
+            "surface-container-highest": "#343537",
+            "tertiary-container": "#4d5051",
+            "on-primary": "#620e1e",
+            "error": "#ffb4ab",
+            "surface-bright": "#38393b",
+            "on-primary-fixed": "#40000d",
+            "surface-tint": "#ffb2b7",
+            "inverse-primary": "#9f3d49",
+            "surface-container-lowest": "#0d0e10",
+            "on-primary-container": "#ffacb1",
+            "on-error": "#690005",
+            "on-surface-variant": "#dbc0c1",
+            "surface-container-low": "#1b1c1e",
+            "primary-fixed": "#ffdadb",
+            "on-secondary-fixed": "#002114",
+            "on-background": "#e3e2e4",
+            "on-tertiary-fixed-variant": "#454748",
+            "on-secondary": "#003825",
+            "outline": "#a38b8b",
+            "tertiary-fixed-dim": "#c5c7c8",
+            "inverse-on-surface": "#303033",
+            "tertiary-fixed": "#e1e3e4",
+            "error-container": "#93000a",
+            "on-surface": "#e3e2e4",
+            "inverse-surface": "#e3e2e4",
+            "primary-container": "#8c2f3b",
+            "surface-container-high": "#292a2c",
+            "background": "#121315",
+            "secondary-fixed": "#a3f3cb",
+            "outline-variant": "#554243",
+            "on-secondary-container": "#8bdab3",
+            "secondary-fixed-dim": "#88d7b0",
+            "tertiary": "#c5c7c8",
+            "on-tertiary-fixed": "#191c1d",
+            "surface-variant": "#343537",
+            "surface-container": "#1f2022",
+            "surface": "#121315",
+            "on-error-container": "#ffdad6"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "headline": ["Inter", "sans-serif"],
+            "display": ["Inter", "sans-serif"],
+            "body": ["Inter", "sans-serif"],
+            "label": ["Public Sans", "sans-serif"],
+            "mono": ["JetBrains Mono", "monospace"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    /* Strict Apple-grade borderless frosted glass rules */
+    .glass-surface {
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.015));
+      backdrop-filter: blur(24px) saturate(140%);
+      -webkit-backdrop-filter: blur(24px) saturate(140%);
+      border: 0 none !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 18px 45px rgba(0, 0, 0, 0.38);
+    }
+    
+    .glass-subtle {
+      background: rgba(255, 255, 255, 0.025);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 0 none !important;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    body {
+      background-color: #0E0F11;
+      color: #E3E2E4;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Radar scan beam animation */
+    @keyframes radarSweep {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .sweep-line {
+      transform-origin: 50% 100%;
+      animation: sweepArc 4.5s ease-in-out infinite alternate;
+    }
+    @keyframes sweepArc {
+      0% { transform: rotate(-55deg); }
+      100% { transform: rotate(55deg); }
+    }
+
+    /* Subtle pulse for telemetry ping */
+    @keyframes pingSlow {
+      0%, 100% { opacity: 0.9; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(1.08); }
+    }
+    .pulse-fused {
+      animation: pingSlow 2.8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#0E0F11] text-on-surface antialiased min-h-screen flex justify-center selection:bg-primary-container selection:text-white pb-24">
+<!-- Mobile Layout Container: Strict iPhone 390px Form-Factor Frame -->
+<main class="w-full max-w-[390px] min-h-screen flex flex-col bg-background relative overflow-x-hidden">
+<!-- TopAppBar (Shared Component JSON Source of Truth) -->
+<header class="bg-surface-dim/80 backdrop-blur-xl docked full-width top-0 sticky z-50 transition-colors">
+<div class="flex justify-between items-center w-full px-5 py-3.5 max-w-md mx-auto">
+<!-- Brand Cluster -->
+<div class="font-headline text-base font-semibold tracking-tight text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="sensors">sensors</span>
+<span class="tracking-tight">RadarFusion</span>
+</div>
+<!-- Status Indicator Pill & Trailing Action -->
+<div class="flex items-center gap-2.5">
+<div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#1A1C20] text-[10px] font-mono font-medium tracking-tight text-secondary">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary animate-pulse"></span>
+            DUAL_ACTIVE
+          </div>
+<button aria-label="Menu" class="text-on-surface-variant hover:text-on-surface active:opacity-70 transition-opacity p-1" type="button">
+<span class="material-symbols-outlined text-2xl leading-none" data-icon="menu">menu</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="flex-1 flex flex-col px-4 pt-4 space-y-7">
+<!-- HERO SECTION -->
+<section class="flex flex-col pt-2">
+<!-- Capstone Badge -->
+<div class="inline-flex items-center gap-1.5 mb-3">
+<span class="text-[10px] font-mono tracking-wider text-secondary uppercase font-semibold">
+            CAPSTONE ENGINEERING · ECE / EMBEDDED
+          </span>
+</div>
+<!-- Headline -->
+<h1 class="font-headline text-[32px] leading-[1.12] font-semibold text-on-surface tracking-tight mb-3">
+          Seeing people through two radars.
+        </h1>
+<!-- Subhead -->
+<p class="font-body text-[15px] leading-relaxed text-[#A7ABB0] max-w-[60ch] mb-5">
+          Combining 24 GHz wide-angle presence detection with 60 GHz micro-motion spatial tracking via an ESP32 real-time fusion engine.
+        </p>
+<!-- Action Buttons -->
+<div class="flex items-center gap-2.5 mb-6">
+<button class="flex-1 py-3 px-4 rounded-xl bg-on-surface text-[#0E0F11] font-headline text-sm font-semibold tracking-tight text-center active:scale-[0.98] transition-all" type="button">
+            Try the simulation
+          </button>
+<button class="py-3 px-4 rounded-xl glass-subtle text-on-surface font-headline text-sm font-medium tracking-tight active:scale-[0.98] transition-all" type="button">
+            How it works
+          </button>
+</div>
+<!-- COMPACT RADAR VISUAL CARD -->
+<div class="glass-surface rounded-2xl p-4 relative overflow-hidden flex flex-col">
+<!-- Card Header & Live Frequency Mode -->
+<div class="flex items-center justify-between mb-3 text-xs">
+<span class="font-mono text-[11px] text-[#A7ABB0] tracking-wider uppercase">POLAR SCAN · AZIMUTH 120°</span>
+<span class="font-mono text-[10px] px-2 py-0.5 rounded bg-primary-container/40 text-primary-fixed font-medium">UART RX SYNCED</span>
+</div>
+<!-- Radar Coordinate Screen -->
+<div class="relative w-full aspect-[4/3] rounded-xl bg-[#0B0C0E] overflow-hidden flex items-end justify-center pb-2">
+<!-- Sweep Radar Cone SVG Visual -->
+<svg class="w-full h-full absolute inset-0 text-white/5" fill="none" viewbox="0 0 320 240">
+<!-- FOV Sector Bounds (120 deg) -->
+<path d="M 160 225 L 20 25" stroke="currentColor" stroke-dasharray="2 3" stroke-width="0.8"></path>
+<path d="M 160 225 L 300 25" stroke="currentColor" stroke-dasharray="2 3" stroke-width="0.8"></path>
+<!-- Range Concentric Arcs -->
+<!-- 6m Arc -->
+<path d="M 40 50 A 185 185 0 0 1 280 50" stroke="currentColor" stroke-width="0.8"></path>
+<!-- 4m Arc -->
+<path d="M 75 110 A 120 120 0 0 1 245 110" stroke="currentColor" stroke-dasharray="3 3" stroke-width="0.8"></path>
+<!-- 2m Arc -->
+<path d="M 110 170 A 60 60 0 0 1 210 170" stroke="currentColor" stroke-width="0.8"></path>
+<!-- Azimuth Grid Lines -->
+<line stroke="currentColor" stroke-dasharray="1 4" stroke-width="0.7" x1="160" x2="160" y1="225" y2="40"></line>
+<!-- Dynamic Sweep Arc line -->
+<g class="sweep-line origin-bottom" style="transform-origin: 160px 225px;">
+<line stroke="rgba(140, 47, 59, 0.4)" stroke-width="1.5" x1="160" x2="160" y1="225" y2="20"></line>
+</g>
+<!-- Target 1: 24 GHz Dot (Maroon #8C2F3B) -->
+<circle cx="178" cy="98" fill="#8C2F3B" opacity="0.85" r="4.5"></circle>
+<!-- Target 2: 60 GHz Dot (Muted Green #4F9D7A) -->
+<circle cx="169" cy="105" fill="#4F9D7A" opacity="0.9" r="4"></circle>
+<!-- Target 3: Fused Lock (Crisp White with Dual Micro Ring) -->
+<circle class="pulse-fused" cx="172" cy="102" fill="none" opacity="0.75" r="7.5" stroke="#4F9D7A" stroke-width="1.2"></circle>
+<circle cx="172" cy="102" fill="none" opacity="0.85" r="5" stroke="#8C2F3B" stroke-width="1.2"></circle>
+<circle cx="172" cy="102" fill="#F2F3F4" r="2.8"></circle>
+<!-- Labels in Polar plot -->
+<text fill="#6F7378" font-family="JetBrains Mono" font-size="8" x="163" y="174">2m</text>
+<text fill="#6F7378" font-family="JetBrains Mono" font-size="8" x="163" y="114">4m</text>
+<text fill="#6F7378" font-family="JetBrains Mono" font-size="8" x="163" y="54">6m</text>
+</svg>
+<!-- Target Tag Float -->
+<div class="absolute top-[82px] left-[184px] pointer-events-none">
+<span class="px-1.5 py-0.5 rounded bg-surface-container/90 text-[9px] font-mono text-[#F2F3F4] tracking-tight">
+                TGT #01 [FUSED]
+              </span>
+</div>
+<!-- Radar Base Center Mark -->
+<div class="w-2.5 h-2.5 rounded-full bg-surface-bright flex items-center justify-center z-10">
+<div class="w-1 h-1 rounded-full bg-white"></div>
+</div>
+</div>
+<!-- Sensor Legend -->
+<div class="grid grid-cols-3 gap-1 pt-3 pb-2 text-[10px] font-mono">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#8C2F3B]"></span>
+<span class="text-[#A7ABB0] truncate">24GHz (LD2452)</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#4F9D7A]"></span>
+<span class="text-[#A7ABB0] truncate">60GHz (LD6003D)</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#F2F3F4] ring-1 ring-white/40"></span>
+<span class="text-white font-medium truncate">Fused Lock</span>
+</div>
+</div>
+<!-- Telemetry Quick Strip -->
+<div class="mt-2 pt-2.5 bg-black/25 rounded-xl px-2.5 py-2 grid grid-cols-4 gap-1 text-center font-mono">
+<div>
+<div class="text-[9px] text-[#6F7378]">DISTANCE</div>
+<div class="text-[11px] font-semibold text-on-surface">3.42 m</div>
+</div>
+<div>
+<div class="text-[9px] text-[#6F7378]">CONFIDENCE</div>
+<div class="text-[11px] font-semibold text-secondary">99.4%</div>
+</div>
+<div>
+<div class="text-[9px] text-[#6F7378]">VELOCITY</div>
+<div class="text-[11px] font-semibold text-on-surface">0.12 m/s</div>
+</div>
+<div>
+<div class="text-[9px] text-[#6F7378]">LATENCY</div>
+<div class="text-[11px] font-semibold text-on-surface">14 ms</div>
+</div>
+</div>
+</div>
+</section>
+<!-- MODALITY BENCHMARK (LEGACY SENSOR BOTTLENECK) -->
+<section class="flex flex-col space-y-3">
+<div>
+<span class="font-mono text-[10px] tracking-wider text-[#6F7378] uppercase">PHYSICS &amp; RELIABILITY</span>
+<h2 class="font-headline text-lg font-semibold text-on-surface tracking-tight mt-0.5">
+            Overcoming legacy bottlenecks.
+          </h2>
+</div>
+<!-- Card 1: PIR -->
+<div class="glass-surface rounded-2xl p-4 flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-xs font-mono text-[#6F7378]">MODALITY 01</span>
+<h3 class="font-headline text-[15px] font-semibold text-on-surface">Passive Infrared (PIR)</h3>
+</div>
+<span class="font-mono text-[10px] px-2 py-0.5 rounded bg-primary-container/40 text-primary-fixed font-semibold">
+              FAILED
+            </span>
+</div>
+<p class="font-body text-xs text-[#A7ABB0] mt-2 leading-relaxed">
+            Thermal blindness under static human presence. Loses subjects during sitting, reading, or sleep with zero Cartesian tracking.
+          </p>
+</div>
+<!-- Card 2: Ultrasonic -->
+<div class="glass-surface rounded-2xl p-4 flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-xs font-mono text-[#6F7378]">MODALITY 02</span>
+<h3 class="font-headline text-[15px] font-semibold text-on-surface">Ultrasonic / Acoustic</h3>
+</div>
+<span class="font-mono text-[10px] px-2 py-0.5 rounded bg-surface-container-high text-on-surface-variant font-semibold">
+              BLOCKED
+            </span>
+</div>
+<p class="font-body text-xs text-[#A7ABB0] mt-2 leading-relaxed">
+            Acoustic reflection absorption. Attenuated severely by cotton clothing, turbulent HVAC drafts, and cannot penetrate thin partitions.
+          </p>
+</div>
+<!-- Card 3: Dual mmWave Fusion -->
+<div class="glass-surface rounded-2xl p-4 flex flex-col justify-between">
+<div class="flex items-start justify-between">
+<div>
+<span class="text-xs font-mono text-secondary">MODALITY 03 · DUAL RIG</span>
+<h3 class="font-headline text-[15px] font-semibold text-white">Dual mmWave Radar Fusion</h3>
+</div>
+<span class="font-mono text-[10px] px-2 py-0.5 rounded bg-secondary-container/50 text-secondary-fixed font-semibold">
+              OPTIMAL (99.4%)
+            </span>
+</div>
+<p class="font-body text-xs text-[#E3E2E4] mt-2 leading-relaxed">
+            Spatial multi-frequency pairing. Captures subtle sub-millimeter chest wall micro-Doppler while establishing stable x,y,z spatial locks.
+          </p>
+</div>
+</section>
+<!-- SYSTEM METRICS GRID (KEY SPECS) -->
+<section class="flex flex-col space-y-3">
+<div class="flex items-center justify-between">
+<div>
+<span class="font-mono text-[10px] tracking-wider text-[#6F7378] uppercase">CORE SPECIFICATIONS</span>
+<h2 class="font-headline text-lg font-semibold text-on-surface tracking-tight mt-0.5">
+              Verified performance envelope.
+            </h2>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-2.5">
+<!-- Metric 1 -->
+<div class="glass-surface rounded-2xl p-3.5 flex flex-col justify-between min-h-[92px]">
+<span class="font-mono text-[10px] text-[#A7ABB0]">SENSORS FUSED</span>
+<div>
+<div class="font-mono text-xl font-bold text-white tracking-tight">2 Radars</div>
+<div class="text-[11px] text-[#6F7378] mt-0.5">24G + 60G Rig</div>
+</div>
+</div>
+<!-- Metric 2 -->
+<div class="glass-surface rounded-2xl p-3.5 flex flex-col justify-between min-h-[92px]">
+<span class="font-mono text-[10px] text-[#A7ABB0]">RADIAL DEPTH</span>
+<div>
+<div class="font-mono text-xl font-bold text-white tracking-tight">6.0 m</div>
+<div class="text-[11px] text-[#6F7378] mt-0.5">Active Range Gate</div>
+</div>
+</div>
+<!-- Metric 3 -->
+<div class="glass-surface rounded-2xl p-3.5 flex flex-col justify-between min-h-[92px]">
+<span class="font-mono text-[10px] text-[#A7ABB0]">SAMPLE LOOP</span>
+<div>
+<div class="font-mono text-xl font-bold text-secondary tracking-tight">10 Hz</div>
+<div class="text-[11px] text-[#6F7378] mt-0.5">100ms FreeRTOS Tick</div>
+</div>
+</div>
+<!-- Metric 4 -->
+<div class="glass-surface rounded-2xl p-3.5 flex flex-col justify-between min-h-[92px]">
+<span class="font-mono text-[10px] text-[#A7ABB0]">AZIMUTH FOV</span>
+<div>
+<div class="font-mono text-xl font-bold text-white tracking-tight">120°</div>
+<div class="text-[11px] text-[#6F7378] mt-0.5">Horizontal Plane</div>
+</div>
+</div>
+<!-- Metric 5 -->
+<div class="glass-surface rounded-2xl p-3.5 flex flex-col justify-between min-h-[92px]">
+<span class="font-mono text-[10px] text-[#A7ABB0]">TRACK ACCURACY</span>
+<div>
+<div class="font-mono text-xl font-bold text-primary-fixed tracking-tight">99.4%</div>
+<div class="text-[11px] text-[#6F7378] mt-0.5">Dual Disambiguation</div>
+</div>
+</div>
+<!-- Metric 6 -->
+<div class="glass-surface rounded-2xl p-3.5 flex flex-col justify-between min-h-[92px]">
+<span class="font-mono text-[10px] text-[#A7ABB0]">PROCESSOR CORE</span>
+<div>
+<div class="font-mono text-xl font-bold text-white tracking-tight">240 MHz</div>
+<div class="text-[11px] text-[#6F7378] mt-0.5">Xtensa Dual-Core 32b</div>
+</div>
+</div>
+</div>
+</section>
+<!-- FREERTOS DUAL-CORE PIPELINE FLOW -->
+<section class="flex flex-col space-y-3">
+<div>
+<span class="font-mono text-[10px] tracking-wider text-[#6F7378] uppercase">FIRMWARE ARCHITECTURE</span>
+<h2 class="font-headline text-lg font-semibold text-on-surface tracking-tight mt-0.5">
+            Asynchronous FreeRTOS pipeline.
+          </h2>
+</div>
+<div class="glass-surface rounded-2xl p-4 flex flex-col space-y-3.5">
+<!-- Flow Step 1: Core 0 Task -->
+<div class="bg-black/30 rounded-xl p-3 flex flex-col">
+<div class="flex items-center justify-between mb-1.5">
+<span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-primary-container text-primary-fixed font-medium">CORE 0</span>
+<span class="font-mono text-[10px] text-[#A7ABB0]">115,200 BAUD</span>
+</div>
+<div class="font-headline text-sm font-semibold text-white">UART 1: HLK-LD2452 RingBuffer</div>
+<p class="text-xs text-[#A7ABB0] mt-1 leading-relaxed">
+              Streams raw continuous FMCW energy frames into ring buffer. Dedicated interrupt handler performs CRC &amp; frame synchronization.
+            </p>
+</div>
+<!-- Connector Flow indicator -->
+<div class="flex justify-center -my-1 text-[#6F7378]">
+<span class="material-symbols-outlined text-sm rotate-90" data-icon="sync_alt">sync_alt</span>
+</div>
+<!-- Flow Step 2: Core 1 Task -->
+<div class="bg-black/30 rounded-xl p-3 flex flex-col">
+<div class="flex items-center justify-between mb-1.5">
+<span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-secondary-container text-secondary font-medium">CORE 1</span>
+<span class="font-mono text-[10px] text-[#A7ABB0]">256,000 BAUD</span>
+</div>
+<div class="font-headline text-sm font-semibold text-white">UART 2: HLK-LD6003D Point Cloud</div>
+<p class="text-xs text-[#A7ABB0] mt-1 leading-relaxed">
+              Ingests 3D cluster points. Executes Euclidean distance gating, Kalman smoothing, and generates associated target centroid.
+            </p>
+</div>
+<!-- Flow Step 3: Concurrency Queues & Output -->
+<div class="p-3 bg-white/[0.02] rounded-xl flex items-center justify-between font-mono text-[11px]">
+<div class="flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-secondary"></span>
+<span class="text-on-surface">Queue: <code class="text-white font-semibold">xQueueSendToBack</code></span>
+</div>
+<span class="text-[#6F7378]">TFT SPI &amp; MQTT</span>
+</div>
+</div>
+</section>
+<!-- SENSOR PHYSICS & HARDWARE SPECS -->
+<section class="flex flex-col space-y-3">
+<div>
+<span class="font-mono text-[10px] tracking-wider text-[#6F7378] uppercase">PHYSICAL TRANSDUCERS</span>
+<h2 class="font-headline text-lg font-semibold text-on-surface tracking-tight mt-0.5">
+            Complementary radar physics.
+          </h2>
+</div>
+<div class="space-y-3">
+<!-- 24 GHz Card -->
+<div class="glass-surface rounded-2xl p-4 flex flex-col space-y-2.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-primary-container"></span>
+<span class="font-headline text-sm font-semibold text-white">HLK-LD2452 (24 GHz)</span>
+</div>
+<span class="font-mono text-[10px] text-primary-fixed">λ = 12.5 mm</span>
+</div>
+<p class="text-xs text-[#A7ABB0] leading-relaxed">
+              FMCW continuous wave radar acting as the wide-baseline presence gating anchor. Highly resilient to environmental turbulence.
+            </p>
+<div class="grid grid-cols-3 gap-2 pt-1 font-mono text-[10px] text-[#A7ABB0]">
+<div>FOV: <span class="text-white font-medium">120°</span></div>
+<div>Depth: <span class="text-white font-medium">6.0m</span></div>
+<div>Current: <span class="text-white font-medium">82mA</span></div>
+</div>
+</div>
+<!-- 60 GHz Card -->
+<div class="glass-surface rounded-2xl p-4 flex flex-col space-y-2.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary-container"></span>
+<span class="font-headline text-sm font-semibold text-white">HLK-LD6003D (60 GHz)</span>
+</div>
+<span class="font-mono text-[10px] text-secondary">λ = 5.0 mm</span>
+</div>
+<p class="text-xs text-[#A7ABB0] leading-relaxed">
+              MIMO mmWave radar generating fine 3D point clouds and detecting micro-Doppler signals from thoracic expansion.
+            </p>
+<div class="grid grid-cols-3 gap-2 pt-1 font-mono text-[10px] text-[#A7ABB0]">
+<div>FOV: <span class="text-white font-medium">100°</span></div>
+<div>Depth: <span class="text-white font-medium">8.0m</span></div>
+<div>Current: <span class="text-white font-medium">145mA</span></div>
+</div>
+</div>
+</div>
+</section>
+<!-- MATHEMATICAL FUSION STATE MACHINE -->
+<section class="flex flex-col space-y-3">
+<div>
+<span class="font-mono text-[10px] tracking-wider text-[#6F7378] uppercase">ALGORITHMIC MODEL</span>
+<h2 class="font-headline text-lg font-semibold text-on-surface tracking-tight mt-0.5">
+            Weighted Euclidean distance association.
+          </h2>
+</div>
+<div class="glass-surface rounded-2xl p-4 flex flex-col space-y-3 font-mono">
+<!-- Math equation box -->
+<div class="bg-black/35 rounded-xl p-3.5 text-center text-xs text-white">
+<div class="text-[#6F7378] text-[10px] uppercase mb-1">Gating Criterion</div>
+<div class="tracking-wide font-medium">
+              d_assoc = √((x₂₄ - x₆₀)² + (y₂₄ - y₆₀)²) ≤ 0.50 m
+            </div>
+</div>
+<!-- Weight distribution breakdown -->
+<div class="grid grid-cols-2 gap-2 text-xs pt-1">
+<div class="p-2.5 rounded-xl bg-white/[0.02] flex flex-col">
+<span class="text-[10px] text-[#6F7378]">W_24 WEIGHT</span>
+<span class="text-sm font-semibold text-primary-fixed mt-0.5">0.35</span>
+<span class="text-[10px] text-[#A7ABB0] mt-1 font-sans">Presence Reliability</span>
+</div>
+<div class="p-2.5 rounded-xl bg-white/[0.02] flex flex-col">
+<span class="text-[10px] text-[#6F7378]">W_60 WEIGHT</span>
+<span class="text-sm font-semibold text-secondary mt-0.5">0.65</span>
+<span class="text-[10px] text-[#A7ABB0] mt-1 font-sans">Spatial Tracking</span>
+</div>
+</div>
+<div class="p-2.5 rounded-xl bg-white/[0.02] flex items-center justify-between text-[11px]">
+<span class="text-[#A7ABB0] font-sans">Fallback Latch Window</span>
+<span class="text-white font-semibold">5.000 s Anti-Flicker</span>
+</div>
+</div>
+</section>
+<!-- HARDWARE INTEGRATION & POWER BUDGET -->
+<section class="flex flex-col space-y-3">
+<div>
+<span class="font-mono text-[10px] tracking-wider text-[#6F7378] uppercase">ELECTRICAL CHARACTERISTICS</span>
+<h2 class="font-headline text-lg font-semibold text-on-surface tracking-tight mt-0.5">
+            Hardware power budget.
+          </h2>
+</div>
+<div class="glass-surface rounded-2xl p-4 flex flex-col space-y-3">
+<div class="flex items-baseline justify-between">
+<span class="font-mono text-xs text-[#A7ABB0]">TOTAL CONSUMPTION</span>
+<div class="flex items-baseline gap-1">
+<span class="font-mono text-2xl font-bold text-white">482</span>
+<span class="font-mono text-xs text-[#6F7378]">mA @ 5.0V USB-C (~2.41 W)</span>
+</div>
+</div>
+<!-- Power Rail Distribution Bar -->
+<div class="w-full h-2 rounded-full bg-surface-container-highest overflow-hidden flex">
+<!-- ESP32 -->
+<div class="h-full bg-white" style="width: 33.2%" title="ESP32: 160mA"></div>
+<!-- LD6003D -->
+<div class="h-full bg-[#4F9D7A]" style="width: 30.1%" title="LD6003D: 145mA"></div>
+<!-- TFT SPI -->
+<div class="h-full bg-[#8C2F3B]" style="width: 19.7%" title="TFT: 95mA"></div>
+<!-- LD2452 -->
+<div class="h-full bg-[#A7ABB0]" style="width: 17.0%" title="LD2452: 82mA"></div>
+</div>
+<!-- Breakdown list -->
+<div class="grid grid-cols-2 gap-2 text-[11px] font-mono pt-1 text-[#A7ABB0]">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-white"></span>
+<span>ESP32 MCU: <b class="text-white">160mA</b></span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#4F9D7A]"></span>
+<span>60G Radar: <b class="text-white">145mA</b></span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#8C2F3B]"></span>
+<span>3.5" TFT SPI: <b class="text-white">95mA</b></span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#A7ABB0]"></span>
+<span>24G Radar: <b class="text-white">82mA</b></span>
+</div>
+</div>
+</div>
+</section>
+<!-- EMBEDDED TFT SCREEN & DEVELOPER STREAM PREVIEW -->
+<section class="flex flex-col space-y-3">
+<div>
+<span class="font-mono text-[10px] tracking-wider text-[#6F7378] uppercase">TELEMETRY &amp; VISUALIZATION</span>
+<h2 class="font-headline text-lg font-semibold text-on-surface tracking-tight mt-0.5">
+            Live developer stream.
+          </h2>
+</div>
+<!-- Physical TFT 480x320 Simulation Card -->
+<div class="glass-surface rounded-2xl p-3.5 flex flex-col space-y-2">
+<div class="flex items-center justify-between text-[11px] font-mono">
+<span class="text-[#A7ABB0] flex items-center gap-1.5">
+<span class="material-symbols-outlined text-sm text-secondary" data-icon="tv">tv</span>
+              TFT SPI ST7796 [480×320]
+            </span>
+<span class="text-secondary font-medium">60 FPS DMA</span>
+</div>
+<div class="bg-[#090A0C] rounded-xl p-3 font-mono text-[11px] flex flex-col space-y-2">
+<div class="flex justify-between items-center text-[10px] text-[#6F7378] border-none pb-1">
+<span>TARGET X: <span class="text-white">+0.48m</span></span>
+<span>TARGET Y: <span class="text-white">+3.42m</span></span>
+<span>DOPPLER: <span class="text-secondary">0.14 m/s</span></span>
+</div>
+<div class="h-16 w-full rounded bg-[#101215] relative flex items-center justify-center overflow-hidden">
+<div class="absolute inset-0 grid grid-cols-6 grid-rows-3 opacity-20">
+<div class="border-b border-r border-white/20"></div>
+<div class="border-b border-r border-white/20"></div>
+<div class="border-b border-r border-white/20"></div>
+<div class="border-b border-r border-white/20"></div>
+<div class="border-b border-r border-white/20"></div>
+<div class="border-b border-white/20"></div>
+</div>
+<div class="relative z-10 flex items-center gap-2">
+<span class="w-2.5 h-2.5 rounded-full bg-secondary animate-ping"></span>
+<span class="text-[10px] text-white font-medium">RESPIRATION LOCK: 18.2 BPM</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Developer WebSocket stream block -->
+<div class="glass-surface rounded-2xl p-3.5 flex flex-col space-y-2 font-mono">
+<div class="flex items-center justify-between text-[11px]">
+<span class="text-[#A7ABB0]">ws://192.168.4.1/radar-stream</span>
+<span class="text-[10px] text-secondary">CONNECTED</span>
+</div>
+<div class="p-3 bg-black/40 rounded-xl text-[10px] leading-relaxed text-[#A7ABB0] overflow-x-auto">
+<pre class="font-mono text-[#dbc0c1]">{
+  <span class="text-[#8bdab3]">"ts"</span>: 1718820492104,
+  <span class="text-[#8bdab3]">"fused"</span>: {
+    <span class="text-[#8bdab3]">"x"</span>: 0.48, <span class="text-[#8bdab3]">"y"</span>: 3.42, <span class="text-[#8bdab3]">"z"</span>: 1.15,
+    <span class="text-[#8bdab3]">"confidence"</span>: 0.994,
+    <span class="text-[#8bdab3]">"state"</span>: <span class="text-[#ffb2b7]">"OCCUPIED_STATIC"</span>
+  },
+  <span class="text-[#8bdab3]">"sensors"</span>: { <span class="text-[#8bdab3]">"ld2452"</span>: true, <span class="text-[#8bdab3]">"ld6003d"</span>: true }
+}</pre>
+</div>
+</div>
+</section>
+<!-- MISSION-CRITICAL USE CASES -->
+<section class="flex flex-col space-y-3 pb-2">
+<div>
+<span class="font-mono text-[10px] tracking-wider text-[#6F7378] uppercase">APPLICATIONS</span>
+<h2 class="font-headline text-lg font-semibold text-on-surface tracking-tight mt-0.5">
+            Mission-critical applications.
+          </h2>
+</div>
+<div class="space-y-2.5">
+<!-- Use Case 1 -->
+<div class="glass-surface rounded-2xl p-4 flex gap-3.5 items-start">
+<div class="p-2 rounded-xl bg-white/[0.04] text-secondary">
+<span class="material-symbols-outlined text-xl" data-icon="lightbulb">lightbulb</span>
+</div>
+<div>
+<h3 class="font-headline text-sm font-semibold text-white">Zone-Targeted Climate &amp; Lighting</h3>
+<p class="text-xs text-[#A7ABB0] mt-1 leading-relaxed">
+                Zero false-offs while reading or resting. Maintains room state reliably without requiring body movements.
+              </p>
+</div>
+</div>
+<!-- Use Case 2 -->
+<div class="glass-surface rounded-2xl p-4 flex gap-3.5 items-start">
+<div class="p-2 rounded-xl bg-white/[0.04] text-secondary">
+<span class="material-symbols-outlined text-xl" data-icon="shield">shield</span>
+</div>
+<div>
+<h3 class="font-headline text-sm font-semibold text-white">Camera-Free Bed &amp; Fall Awareness</h3>
+<p class="text-xs text-[#A7ABB0] mt-1 leading-relaxed">
+                100% optical privacy preserving. Continuous vitals monitoring and immediate fall detection via micro-Doppler height drops.
+              </p>
+</div>
+</div>
+<!-- Use Case 3 -->
+<div class="glass-surface rounded-2xl p-4 flex gap-3.5 items-start">
+<div class="p-2 rounded-xl bg-white/[0.04] text-secondary">
+<span class="material-symbols-outlined text-xl" data-icon="filter_vintage">filter_vintage</span>
+</div>
+<div>
+<h3 class="font-headline text-sm font-semibold text-white">Inanimate vs. Human Discrimination</h3>
+<p class="text-xs text-[#A7ABB0] mt-1 leading-relaxed">
+                Rejects oscillatory clutter from oscillating fans, blowing curtains, and robot vacuums through Doppler frequency gating.
+              </p>
+</div>
+</div>
+</div>
+</section>
+</div>
+<!-- Footer Component (Shared Component JSON Source of Truth) -->
+<footer class="bg-surface-container-lowest full-width">
+<div class="flex flex-col items-center gap-3 px-6 py-10 pb-28 text-center max-w-md mx-auto w-full">
+<!-- Brand Signature -->
+<div class="font-headline text-sm font-semibold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-base" data-icon="sensors">sensors</span>
+<span>Dual mmWave RadarFusion</span>
+</div>
+<!-- Links Cluster -->
+<div class="flex flex-wrap justify-center gap-x-4 gap-y-2 font-body text-xs text-on-surface-variant">
+<a class="text-on-surface-variant hover:text-on-surface transition-colors duration-150 active:opacity-75" href="#docs">Architecture Docs</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors duration-150 active:opacity-75" href="#pipeline">FreeRTOS Pipeline</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors duration-150 active:opacity-75" href="#telemetry">Telemetry Stream</a>
+<a class="text-on-surface-variant hover:text-on-surface transition-colors duration-150 active:opacity-75" href="#repo">GitHub Repo</a>
+</div>
+<!-- Copyright Statement -->
+<p class="font-body text-xs text-[#6F7378] mt-2">
+          © 2025 Dual mmWave Radar Fusion Capstone Project. All rights reserved.
+        </p>
+</div>
+</footer>
+<!-- BottomNavBar (Shared Component JSON Source of Truth) -->
+<!-- Destination count: 4, Active state: Telemetry -->
+<nav aria-label="Bottom Navigation" class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 pb-6 max-w-md mx-auto bg-surface-dim/85 backdrop-blur-2xl">
+<!-- Item 1: Telemetry (Active) -->
+<button class="flex flex-col items-center justify-center text-on-surface font-semibold gap-1 py-1 active:scale-95 transition-transform duration-150" type="button">
+<span class="material-symbols-outlined text-2xl text-primary" data-icon="radar">radar</span>
+<span class="font-label text-[11px] font-medium tracking-tight">Telemetry</span>
+</button>
+<!-- Item 2: Pipeline (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant gap-1 py-1 hover:text-on-surface transition-colors duration-150 active:scale-95" type="button">
+<span class="material-symbols-outlined text-2xl" data-icon="schema">schema</span>
+<span class="font-label text-[11px] font-medium tracking-tight">Pipeline</span>
+</button>
+<!-- Item 3: Specs (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant gap-1 py-1 hover:text-on-surface transition-colors duration-150 active:scale-95" type="button">
+<span class="material-symbols-outlined text-2xl" data-icon="memory">memory</span>
+<span class="font-label text-[11px] font-medium tracking-tight">Specs</span>
+</button>
+<!-- Item 4: Docs (Inactive) -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant gap-1 py-1 hover:text-on-surface transition-colors duration-150 active:scale-95" type="button">
+<span class="material-symbols-outlined text-2xl" data-icon="description">description</span>
+<span class="font-label text-[11px] font-medium tracking-tight">Docs</span>
+</button>
+</nav>
+</main>
+</body></html>

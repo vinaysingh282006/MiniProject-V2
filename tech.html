@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tech & Architecture — Dual mmWave Radar Fusion System</title>
+  <meta name="description" content="Technical deep-dive: FMCW chirp physics, 30-byte frame protocol, ESP32 GPIO Matrix, 6-step fusion stepper, and firmware architecture.">
+
+  <!-- Inter & JetBrains Mono Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Theme Stylesheets -->
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/glass.css">
+  <link rel="stylesheet" href="assets/css/components.css">
+  <link rel="stylesheet" href="assets/css/animations.css">
+</head>
+<body data-bg="contour">
+
+  <div id="scroll-progress"></div>
+  <canvas id="bg-canvas"></canvas>
+  <div class="vignette-overlay"></div>
+
+  <div class="page-wrapper page-fade">
+
+    <!-- Floating Navigation Bar -->
+    <header class="floating-nav glass">
+      <div class="nav-brand">
+        <span class="brand-indicator"></span>
+        <span>Radar Fusion OS</span>
+      </div>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="index.html" class="nav-link">Home</a></li>
+          <li><a href="ml.html" class="nav-link">Machine Learning</a></li>
+          <li><a href="simulation.html" class="nav-link">Simulation</a></li>
+          <li><a href="tech.html" class="nav-link active">Tech & Architecture</a></li>
+          <li><a href="working.html" class="nav-link">Working & Demo</a></li>
+          <li><a href="upgrades.html" class="nav-link">Upgrades</a></li>
+          <li><a href="roadmap.html" class="nav-link">Roadmap</a></li>
+          <li><a href="thanks.html" class="nav-link">Viva & Thanks</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="simulation.html" class="btn btn-primary btn-sm">Try Lab</a>
+        <button class="nav-hamburger" aria-label="Toggle Navigation Menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile Drawer -->
+    <div class="mobile-nav-drawer glass-solid">
+      <a href="index.html" class="nav-link">1. Overview</a>
+      <a href="ml.html" class="nav-link">2. Machine Learning</a>
+      <a href="simulation.html" class="nav-link">3. Simulation Lab</a>
+      <a href="tech.html" class="nav-link active">4. Tech & Architecture</a>
+      <a href="working.html" class="nav-link">5. Working & Demo</a>
+      <a href="upgrades.html" class="nav-link">6. Future Upgrades</a>
+      <a href="roadmap.html" class="nav-link">7. Project Roadmap</a>
+      <a href="thanks.html" class="nav-link">8. Viva & Thanks</a>
+    </div>
+
+    <main class="container" style="padding-top: 130px; padding-bottom: 80px;">
+
+      <!-- Header Intro -->
+      <section style="margin-bottom: 56px;">
+        <span class="badge badge-fused" style="margin-bottom: 12px;">PAGE 04 / 08</span>
+        <h1 style="margin-bottom: 16px;">Technical specifications &amp; architecture.</h1>
+        <p>Comprehensive engineering analysis of the FMCW physics equations, ring-buffer packet protocols, ESP32 hardware UART pin routing, and 6-step association pipeline.</p>
+      </section>
+
+      <!-- TOPIC 1: FMCW RADAR BASICS (ANIMATED CHIRP DIAGRAM) -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass" style="padding: 36px; border-radius: var(--radius-xl);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <span class="badge badge-maroon" style="margin-bottom: 8px;">RADAR PRINCIPLE</span>
+              <h2>1. FMCW Chirp &amp; Beat Frequency Physics</h2>
+              <p>Frequency-Modulated Continuous-Wave radars emit linear frequency chirps. The delay between transmission and reflection produces a beat frequency $f_b$.</p>
+            </div>
+            <div class="glass-subtle" style="padding: 14px 20px; font-family: var(--font-mono); font-size: 0.8125rem;">
+              <span style="color: var(--text-tertiary);">Range Equation:</span><br>
+              <strong style="color: #FFF; font-size: 1.05rem;">R = (c &middot; Tc &middot; fb) / (2B)</strong>
+            </div>
+          </div>
+
+          <!-- FMCW Canvas -->
+          <div style="position: relative; width: 100%; height: 260px; border-radius: var(--radius-md); overflow: hidden; background: rgba(14, 15, 17, 0.7); margin-bottom: 24px;">
+            <canvas id="fmcw-chirp-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; font-size: 0.875rem;">
+            <div class="glass-subtle" style="padding: 16px;">
+              <strong style="color: #FFF; display: block; margin-bottom: 6px;">c = Speed of Light</strong>
+              <span style="color: var(--text-secondary);">&asymp; 3 &times; 10<sup>8</sup> m/s. The propagation speed of electromagnetic mmWave radio waves.</span>
+            </div>
+            <div class="glass-subtle" style="padding: 16px;">
+              <strong style="color: #FFF; display: block; margin-bottom: 6px;">B = Chirp Bandwidth</strong>
+              <span style="color: var(--text-secondary);">250 MHz on 24 GHz (&Delta;R = c/2B &asymp; 60 cm), and up to 4 GHz sweep on 60 GHz (&Delta;R &asymp; 3.75 cm resolution).</span>
+            </div>
+            <div class="glass-subtle" style="padding: 16px;">
+              <strong style="color: #FFF; display: block; margin-bottom: 6px;">Doppler Velocity (v<sub>r</sub>)</strong>
+              <span style="color: var(--text-secondary);">Calculated from the phase shift across consecutive chirps: &Delta;&phi; = (4&pi; &middot; v<sub>r</sub> &middot; T<sub>c</sub>) / &lambda;.</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TOPIC 2: 24 GHz VS 60 GHz DETAILED PHYSICS -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass" style="padding: 36px; border-radius: var(--radius-xl);">
+          <span class="badge badge-green" style="margin-bottom: 8px;">TRANSDUCER COMPARISON</span>
+          <h2 style="margin-bottom: 16px;">2. 24 GHz (1T2R) vs 60 GHz (2T2R) Transducers</h2>
+          <p style="margin-bottom: 32px;">Comparative breakdown of electromagnetic penetration, beam geometry, and antenna array layouts.</p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+            
+            <!-- 24 GHz LD2452 Card -->
+            <div class="glass-maroon" style="padding: 28px; border-radius: var(--radius-lg);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="color: #FFF;">HLK-LD2452 (24 GHz)</h3>
+                <span class="badge badge-maroon">&lambda; = 12.5 mm</span>
+              </div>
+              <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 20px;">
+                <li>&bull; <strong>Antenna Configuration:</strong> 1 Transmit (TX), 2 Receive (RX) microstrip patch antennas.</li>
+                <li>&bull; <strong>Beam Width:</strong> Broad &plusmn;60° horizontal coverage, &plusmn;30° vertical azimuth.</li>
+                <li>&bull; <strong>Penetration:</strong> Readily penetrates drywall, wooden doors, glass partitions, and thick winter clothing.</li>
+                <li>&bull; <strong>Power Consumption:</strong> ~126 mA peak @ 5.0V DC.</li>
+              </ul>
+              <!-- SVG Patch Antenna Sketch -->
+              <div style="width: 100%; height: 80px; background: rgba(0,0,0,0.3); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <svg width="220" height="50">
+                  <rect x="20" y="10" width="28" height="30" fill="#9E3544" rx="3"/>
+                  <text x="34" y="28" fill="#FFF" font-family="JetBrains Mono" font-size="9" text-anchor="middle">TX</text>
+                  <rect x="110" y="10" width="28" height="30" fill="rgba(255,255,255,0.2)" rx="3"/>
+                  <text x="124" y="28" fill="#FFF" font-family="JetBrains Mono" font-size="9" text-anchor="middle">RX1</text>
+                  <rect x="160" y="10" width="28" height="30" fill="rgba(255,255,255,0.2)" rx="3"/>
+                  <text x="174" y="28" fill="#FFF" font-family="JetBrains Mono" font-size="9" text-anchor="middle">RX2</text>
+                  <text x="147" y="47" fill="#A6ABB2" font-family="JetBrains Mono" font-size="8" text-anchor="middle">d = &lambda;/2 &asymp; 6.25mm</text>
+                </svg>
+              </div>
+            </div>
+
+            <!-- 60 GHz LD6003D Card -->
+            <div class="glass-green" style="padding: 28px; border-radius: var(--radius-lg);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h3 style="color: #FFF;">HLK-LD6003D (60 GHz)</h3>
+                <span class="badge badge-green">&lambda; = 5.0 mm</span>
+              </div>
+              <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px; font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 20px;">
+                <li>&bull; <strong>Antenna Configuration:</strong> 2 Transmit (TX), 2 Receive (RX) MIMO virtual array (ADT6101P Cortex-M3).</li>
+                <li>&bull; <strong>Angular Resolution:</strong> High-density 3D point cloud [X, Y, Z] with micro-motion detection.</li>
+                <li>&bull; <strong>Atmospheric Damping:</strong> Higher absorption in oxygen (O<sub>2</sub> band), eliminating false targets through exterior walls.</li>
+                <li>&bull; <strong>Power Consumption:</strong> ~150 mA peak @ 5.0V DC.</li>
+              </ul>
+              <!-- SVG Patch Antenna Sketch -->
+              <div style="width: 100%; height: 80px; background: rgba(0,0,0,0.3); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                <svg width="220" height="50">
+                  <rect x="20" y="10" width="16" height="18" fill="#3FB985" rx="2"/>
+                  <rect x="42" y="10" width="16" height="18" fill="#3FB985" rx="2"/>
+                  <text x="39" y="38" fill="#A6ABB2" font-family="JetBrains Mono" font-size="8" text-anchor="middle">2T Array</text>
+                  <rect x="130" y="10" width="16" height="18" fill="rgba(255,255,255,0.2)" rx="2"/>
+                  <rect x="152" y="10" width="16" height="18" fill="rgba(255,255,255,0.2)" rx="2"/>
+                  <text x="149" y="38" fill="#A6ABB2" font-family="JetBrains Mono" font-size="8" text-anchor="middle">2R Array (d &asymp; 2.5mm)</text>
+                </svg>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- TOPIC 3: THE 30-BYTE FRAME & LD6003D ADAPTIVE PARSER -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass" style="padding: 36px; border-radius: var(--radius-xl);">
+          <span class="badge badge-maroon" style="margin-bottom: 8px;">BINARY PROTOCOL</span>
+          <h2 style="margin-bottom: 16px;">3. The 30-Byte LD2452 Frame &amp; Adaptive Parser</h2>
+          <p style="margin-bottom: 28px;">
+            The HLK-LD2452 delivers fixed 30-byte telemetry frames at 256,000 bps. The LD6003D adaptive parser auto-detects Hi-Link binary (AA FF ... 55 CC) and SY packet structures (53 59 ... 54 43).
+          </p>
+
+          <!-- 30-Byte Strip Visual -->
+          <div style="margin-bottom: 24px;">
+            <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary); display: block; margin-bottom: 8px;">30-BYTE FRAME STRUCTURE:</span>
+            <div style="display: flex; gap: 4px; overflow-x: auto; padding-bottom: 10px;">
+              <div class="hex-byte header" style="flex: 4; min-width: 90px;">AA FF 03 00<br><span style="font-size: 0.625rem;">HEADER (4B)</span></div>
+              <div class="hex-byte target" style="flex: 8; min-width: 160px;">X(2) Y(2) Spd(2) Dist(2)<br><span style="font-size: 0.625rem;">TARGET 1 (8 BYTES)</span></div>
+              <div class="hex-byte target" style="flex: 8; min-width: 160px; opacity: 0.75;">X(2) Y(2) Spd(2) Dist(2)<br><span style="font-size: 0.625rem;">TARGET 2 (8 BYTES)</span></div>
+              <div class="hex-byte target" style="flex: 8; min-width: 160px; opacity: 0.5;">X(2) Y(2) Spd(2) Dist(2)<br><span style="font-size: 0.625rem;">TARGET 3 (8 BYTES)</span></div>
+              <div class="hex-byte tail" style="flex: 2; min-width: 60px;">55 CC<br><span style="font-size: 0.625rem;">TAIL (2B)</span></div>
+            </div>
+          </div>
+
+          <div class="glass-subtle" style="padding: 20px; font-family: var(--font-mono); font-size: 0.8125rem; line-height: 1.6;">
+            <strong style="color: #FFF;">Bit 15 Sign Convention:</strong><br>
+            Coordinates in the LD2452 payload are 16-bit signed integers in millimeters. Bit 15 indicates sign: <br>
+            <code>int16_t x = (raw_byte_high &amp; 0x80) ? -((raw_byte_high &amp; 0x7F) &lt;&lt; 8 | raw_byte_low) : ((raw_byte_high &lt;&lt; 8) | raw_byte_low);</code>
+          </div>
+        </div>
+      </section>
+
+      <!-- TOPIC 4: ESP32 GPIO MATRIX CROSSBAR -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass" style="padding: 36px; border-radius: var(--radius-xl);">
+          <span class="badge badge-fused" style="margin-bottom: 8px;">SILICON ROUTING</span>
+          <h2 style="margin-bottom: 16px;">4. ESP32 GPIO Matrix &amp; Hardware UART Routing</h2>
+          <p style="margin-bottom: 24px;">
+            Unlike standard microcontrollers, the ESP32 GPIO Matrix allows hardware UART peripherals to be routed to any non-flash pin. Hence, <code>Serial2.begin(115200, SERIAL_8N1, 25, 26)</code> is true hardware buffered UART with DMA support.
+          </p>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+            <div class="glass-subtle" style="padding: 20px;">
+              <span class="text-mono" style="color: var(--green-soft); font-weight: 600;">Hardware UART1</span>
+              <p style="font-size: 0.875rem; margin-top: 6px;">GPIO16 (RX) &amp; GPIO17 (TX) assigned to LD2452 @ 256,000 bps. High baud eliminates frame latency.</p>
+            </div>
+            <div class="glass-subtle" style="padding: 20px;">
+              <span class="text-mono" style="color: var(--maroon-soft); font-weight: 600;">Hardware UART0 Remap</span>
+              <p style="font-size: 0.875rem; margin-top: 6px;">GPIO25 (RX) &amp; GPIO26 (TX) assigned to LD6003D @ 115,200 bps. Leaves USB Serial programming unaffected.</p>
+            </div>
+            <div class="glass-subtle" style="padding: 20px; background: rgba(214, 69, 93, 0.1);">
+              <span class="text-mono" style="color: var(--alert-maroon); font-weight: 600;">&times; FORBIDDEN: GPIO 9 &amp; 10</span>
+              <p style="font-size: 0.875rem; margin-top: 6px;">Tied directly to the on-module SPI Flash. Attempting to use them causes immediate CPU crash and boot loop.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TOPIC 5: 6-STEP INTERACTIVE FUSION STEPPER -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass glass-solid" style="padding: 36px; border-radius: var(--radius-xl);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px;">
+            <div>
+              <span class="badge badge-green" style="margin-bottom: 8px;">INTERACTIVE PIPELINE STEPPER</span>
+              <h2>5. Step-by-Step Fusion State Machine</h2>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button id="fusion-step-prev" class="btn btn-secondary btn-sm">&larr; Prev</button>
+              <button id="fusion-step-next" class="btn btn-primary btn-sm">Next Step &rarr;</button>
+            </div>
+          </div>
+
+          <!-- Step Pills -->
+          <div style="display: flex; gap: 8px; margin-bottom: 24px; overflow-x: auto; padding-bottom: 8px;">
+            <button class="fusion-step-pill segmented-btn active">01. Capture</button>
+            <button class="fusion-step-pill segmented-btn">02. Dist Matrix</button>
+            <button class="fusion-step-pill segmented-btn">03. Threshold</button>
+            <button class="fusion-step-pill segmented-btn">04. Merge</button>
+            <button class="fusion-step-pill segmented-btn">05. Confidence</button>
+            <button class="fusion-step-pill segmented-btn">06. Output</button>
+          </div>
+
+          <!-- Active Step Display Box -->
+          <div class="glass" style="padding: 28px; border-radius: var(--radius-lg); margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+              <span id="fusion-step-num" class="text-mono" style="color: var(--green-soft); font-weight: 600;">STEP 01</span>
+              <span class="badge badge-fused">100 ms Cycle</span>
+            </div>
+            <h3 id="fusion-step-title" style="margin-bottom: 12px; color: #FFF;">Concurrent Frame Ingestion</h3>
+            <p id="fusion-step-desc" style="font-size: 0.9375rem; margin-bottom: 20px;">
+              UART1 (24G @ 256,000 baud) and UART0 (60G @ 115,200 baud) are read into non-blocking FreeRTOS ring-buffers every 100 ms.
+            </p>
+            <div id="fusion-step-matrix" class="code-card" style="font-size: 0.8125rem;">
+              Frame Sync: LD2452 30-byte [AA FF 03 00 ... 55 CC] | LD6003D [53 59 ... 54 43]
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TOPIC 6: DUAL-SENSOR KALMAN FILTER STATE-SPACE TRACKING ARCHITECTURE -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div class="glass glass-solid" style="padding: 36px; border-radius: var(--radius-xl);">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
+            <div>
+              <span class="badge badge-fused" style="margin-bottom: 8px;">STATE-SPACE ESTIMATION ENGINE</span>
+              <h2>6. Dual-Sensor Asynchronous Kalman Filter Architecture</h2>
+              <p style="margin-top: 6px;">Continuous-discrete kinematic state-space estimator running on ESP32 Core 1. Merges noisy 24 GHz measurements ($R_{24}$) and high-resolution 60 GHz measurements ($R_{60}$) with Mahalanobis spatial gating.</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--text-tertiary);">STATE:</span>
+              <span id="kf-state-vec" class="text-mono" style="color: #FFF; font-size: 0.8125rem;">[X: 0.00m, Y: 0.00m, Vx: 0.00, Vy: 0.00]</span>
+              <span id="kf-gain-val" class="badge badge-green">K = 0.500</span>
+              <span id="kf-cov-val" class="badge badge-maroon">Tr(P) = 0.420</span>
+            </div>
+          </div>
+
+          <!-- Interactive Kalman Radar Plane Canvas -->
+          <div style="margin-bottom: 24px;">
+            <canvas id="kalman-filter-canvas" style="width: 100%; height: 360px; background: rgba(0,0,0,0.4); border-radius: var(--radius-md); display: block;"></canvas>
+            <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 12px; font-size: 0.8125rem; font-family: var(--font-mono); color: var(--text-secondary); align-items: center;">
+              <span style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: #9E3544; display: inline-block;"></span>
+                <span>24 GHz Measurement &amp; Ellipse (R<sub>24</sub>)</span>
+              </span>
+              <span style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: #3FB985; display: inline-block;"></span>
+                <span>60 GHz Measurement &amp; Ellipse (R<sub>60</sub>)</span>
+              </span>
+              <span style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 10px; height: 10px; border: 1px dashed rgba(255,255,255,0.7); display: inline-block;"></span>
+                <span>A Priori Prediction (x&#770;<sup>-</sup>)</span>
+              </span>
+              <span style="display: flex; align-items: center; gap: 6px;">
+                <span style="width: 12px; height: 12px; border-radius: 50%; background: #FFFFFF; border: 1.5px solid #3FB985; display: inline-block;"></span>
+                <span>Optimal Kalman State (x&#770;)</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Technical Breakdown Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 24px;">
+            
+            <!-- State Vector & Kinematic Motion Model -->
+            <div class="glass-subtle" style="padding: 22px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--maroon-soft); font-weight: 600;">1. KINEMATIC MOTION MODEL (F, Q)</span>
+              <div class="text-mono" style="font-size: 0.8125rem; color: #FFF; margin: 10px 0; line-height: 1.5;">
+                x<sub>k</sub> = [p<sub>x</sub>, p<sub>y</sub>, v<sub>x</sub>, v<sub>y</sub>]<sup>T</sup><br>
+                F = [[1, 0, &Delta;t, 0], [0, 1, 0, &Delta;t], [0, 0, 1, 0], [0, 0, 0, 1]]<br>
+                x&#770;<sub>k</sub><sup>-</sup> = F x&#770;<sub>k-1</sub>, &nbsp; P<sub>k</sub><sup>-</sup> = F P<sub>k-1</sub> F<sup>T</sup> + Q
+              </div>
+              <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5;">
+                Sample interval &Delta;t = 0.10s. The continuous white-noise acceleration model Q (q = 0.25 m&sup2;/s&sup3;) accommodates sharp human turns and sudden halting without lag or overshooting.
+              </p>
+            </div>
+
+            <!-- Asynchronous Dual-Sensor Measurement (H, R) -->
+            <div class="glass-subtle" style="padding: 22px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: var(--green-soft); font-weight: 600;">2. ASYNCHRONOUS UPDATE (H, R)</span>
+              <div class="text-mono" style="font-size: 0.8125rem; color: #FFF; margin: 10px 0; line-height: 1.5;">
+                H = [[1, 0, 0, 0], [0, 1, 0, 0]]<br>
+                R<sub>24</sub> = diag(0.12, 0.12) &bull; R<sub>60</sub> = diag(0.02, 0.02)<br>
+                z<sub>k</sub> &in; {z<sub>24</sub>, z<sub>60</sub>} (Sequential Asynchronous Arrival)
+              </div>
+              <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5;">
+                Sensors transmit frames over separate FreeRTOS UART queues. Rather than waiting for synchronization, the filter applies a sequential update with the specific sensor's noise covariance whenever a packet arrives.
+              </p>
+            </div>
+
+            <!-- Kalman Gain & Mahalanobis Outlier Gating -->
+            <div class="glass-subtle" style="padding: 22px;">
+              <span class="text-mono" style="font-size: 0.75rem; color: #FFF; font-weight: 600;">3. GAIN (K) &amp; MAHALANOBIS GATING</span>
+              <div class="text-mono" style="font-size: 0.8125rem; color: var(--green-soft); margin: 10px 0; line-height: 1.5;">
+                K<sub>k</sub> = P<sub>k</sub><sup>-</sup> H<sup>T</sup> (H P<sub>k</sub><sup>-</sup> H<sup>T</sup> + R)<sup>-1</sup><br>
+                x&#770;<sub>k</sub> = x&#770;<sub>k</sub><sup>-</sup> + K<sub>k</sub> (z<sub>k</sub> - H x&#770;<sub>k</sub><sup>-</sup>)<br>
+                d<sub>M</sub><sup>2</sup> = (z<sub>k</sub> - H x&#770;<sup>-</sup>)<sup>T</sup> S<sup>-1</sup> (z<sub>k</sub> - H x&#770;<sup>-</sup>) &le; 9.21
+              </div>
+              <p style="font-size: 0.8125rem; color: var(--text-secondary); line-height: 1.5;">
+                When 60G reports, K automatically shifts 85% confidence to its fine millimeter position. Returns exceeding the 99% &chi;&sup2; confidence ellipsoid (d<sub>M</sub><sup>2</sup> &gt; 9.21) are rejected as multipath clutter.
+              </p>
+            </div>
+
+          </div>
+
+          <!-- ESP32 Fixed-Size Kalman C++ Code Excerpt -->
+          <div class="glass" style="padding: 20px; border-radius: var(--radius-lg);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px; align-items: center;">
+              <span class="text-mono" style="font-size: 0.8125rem; color: #FFF; font-weight: 600;">ESP32 Microsecond Kalman Execution (&le; 1.8 &mu;s on Xtensa Core 1)</span>
+              <span class="badge badge-fused">Fixed 4&times;4 Float Matrix</span>
+            </div>
+            <pre class="code-card"><code><span class="code-comment">// High-performance 2D Kinematic Kalman Filter for Dual Radar Fusion</span>
+<span class="code-keyword">void</span> <span class="code-func">kalmanUpdate</span>(TargetKF &amp;kf, <span class="code-keyword">float</span> zx, <span class="code-keyword">float</span> zy, <span class="code-keyword">float</span> sigmaR) {
+  <span class="code-comment">// 1. Innovation residual</span>
+  <span class="code-keyword">float</span> yx = zx - kf.px;
+  <span class="code-keyword">float</span> yy = zy - kf.py;
+
+  <span class="code-comment">// 2. Innovation covariance S = P + R</span>
+  <span class="code-keyword">float</span> Sx = kf.Pxx + (sigmaR * sigmaR);
+  <span class="code-keyword">float</span> Sy = kf.Pyy + (sigmaR * sigmaR);
+
+  <span class="code-comment">// 3. Mahalanobis distance gating check (chi-square 2-DOF at 99%)</span>
+  <span class="code-keyword">float</span> dM2 = (yx * yx) / Sx + (yy * yy) / Sy;
+  <span class="code-keyword">if</span> (dM2 &gt; <span class="code-num">9.21f</span>) <span class="code-keyword">return</span>; <span class="code-comment">// Reject multipath or fan clutter</span>
+
+  <span class="code-comment">// 4. Optimal Kalman gain K = P / S</span>
+  <span class="code-keyword">float</span> Kx = kf.Pxx / Sx;
+  <span class="code-keyword">float</span> Ky = kf.Pyy / Sy;
+
+  <span class="code-comment">// 5. State correction</span>
+  kf.px += Kx * yx;
+  kf.py += Ky * yy;
+  kf.vx += (Kx / <span class="code-num">0.10f</span>) * yx * <span class="code-num">0.25f</span>;
+  kf.vy += (Ky / <span class="code-num">0.10f</span>) * yy * <span class="code-num">0.25f</span>;
+
+  <span class="code-comment">// 6. Covariance update P = (1 - K) * P</span>
+  kf.Pxx *= (<span class="code-num">1.0f</span> - Kx);
+  kf.Pyy *= (<span class="code-num">1.0f</span> - Ky);
+}</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- TOPIC 7 & 8: SHARED SPI BUS & WEB PATH -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 32px;">
+          
+          <!-- Shared SPI Bus -->
+          <div class="glass" style="padding: 32px; border-radius: var(--radius-xl);">
+            <span class="badge badge-maroon" style="margin-bottom: 8px;">VSPI BUS ARCHITECTURE</span>
+            <h3 style="margin-bottom: 14px;">7. Shared VSPI Bus (TFT + Touch)</h3>
+            <p style="font-size: 0.875rem; margin-bottom: 20px;">
+              ILI9488 display and XPT2046 touch controller share MOSI (23), SCK (18), and MISO (19). Disjoint Chip-Select lines (GPIO15 vs GPIO21) prevent data bus collisions during capacitive polling.
+            </p>
+            <div class="code-card" style="font-size: 0.75rem;">
+              // VSPI Bus Arbitration<br>
+              MOSI: GPIO 23 &bull; SCK: GPIO 18 &bull; MISO: GPIO 19<br>
+              TFT_CS: GPIO 15 &bull; TOUCH_CS: GPIO 21<br>
+              TOUCH_IRQ: GPIO 22 (Falling Edge Trigger)
+            </div>
+          </div>
+
+          <!-- Web Path: ESP32 to Browser -->
+          <div class="glass" style="padding: 32px; border-radius: var(--radius-xl);">
+            <span class="badge badge-green" style="margin-bottom: 8px;">ASYNC WEBSOCKET PATH</span>
+            <h3 style="margin-bottom: 14px;">8. Web Telemetry Path</h3>
+            <p style="font-size: 0.875rem; margin-bottom: 20px;">
+              ESP32 runs AsyncWebServer and AsyncWebSocket on port 80. SoftAP SSID: <code>RadarFusion-AP</code> (pass: <code>12345678</code>, IP: <code>192.168.4.1</code>). Dispatches JSON packets at 10 Hz without polling overhead.
+            </p>
+            <div class="code-card" style="font-size: 0.75rem;">
+              // WebSocket JSON Payload Format<br>
+              { "t": 128450, "targets": [<br>
+              &nbsp;&nbsp;{ "id": 1, "x": 0.22, "y": 3.42, "spd": 0.12, "conf": 99.4 }<br>
+              ]}
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- TOPIC 9: THREE CLEAN CODE CARDS -->
+      <section class="reveal" style="margin-bottom: 80px;">
+        <span class="badge badge-fused" style="margin-bottom: 8px;">FIRMWARE IMPLEMENTATION</span>
+        <h2 style="margin-bottom: 24px;">9. Production ESP32 C++ Code Excerpts</h2>
+
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+          <!-- Code Card 1 -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-lg);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+              <span class="text-mono" style="font-weight: 600; color: #FFF;">Hardware UART Remap Initialization (PlatformIO)</span>
+              <span class="badge badge-maroon">HardwareSerial</span>
+            </div>
+            <pre class="code-card"><code><span class="code-comment">// Remap UART2 to real hardware pins 25/26 via ESP32 GPIO Matrix</span>
+<span class="code-keyword">#include</span> <span class="code-str">&lt;HardwareSerial.h&gt;</span>
+HardwareSerial <span class="code-func">SerialLD2452</span>(<span class="code-num">1</span>);
+HardwareSerial <span class="code-func">SerialLD6003</span>(<span class="code-num">2</span>);
+
+<span class="code-keyword">void</span> <span class="code-func">setupUARTs</span>() {
+  <span class="code-comment">// LD2452: 256000 baud on pins 16 (RX), 17 (TX)</span>
+  SerialLD2452.<span class="code-func">begin</span>(<span class="code-num">256000</span>, SERIAL_8N1, <span class="code-num">16</span>, <span class="code-num">17</span>);
+  <span class="code-comment">// LD6003D: 115200 baud on pins 25 (RX), 26 (TX)</span>
+  SerialLD6003.<span class="code-func">begin</span>(<span class="code-num">115200</span>, SERIAL_8N1, <span class="code-num">25</span>, <span class="code-num">26</span>);
+}</code></pre>
+          </div>
+
+          <!-- Code Card 2 -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-lg);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+              <span class="text-mono" style="font-weight: 600; color: #FFF;">LD2452 30-Byte RingBuffer Parser Skeleton</span>
+              <span class="badge badge-green">RingBuffer</span>
+            </div>
+            <pre class="code-card"><code><span class="code-keyword">bool</span> <span class="code-func">parseLD2452Frame</span>(uint8_t *buf, <span class="code-keyword">int</span> len, Target24 &amp;tgt) {
+  <span class="code-comment">// Validate sync header AA FF 03 00 and tail 55 CC</span>
+  <span class="code-keyword">if</span> (buf[<span class="code-num">0</span>] != <span class="code-num">0xAA</span> || buf[<span class="code-num">1</span>] != <span class="code-num">0xFF</span> || buf[<span class="code-num">2</span>] != <span class="code-num">0x03</span> || buf[<span class="code-num">3</span>] != <span class="code-num">0x00</span>) <span class="code-keyword">return false</span>;
+  <span class="code-keyword">if</span> (buf[<span class="code-num">28</span>] != <span class="code-num">0x55</span> || buf[<span class="code-num">29</span>] != <span class="code-num">0xCC</span>) <span class="code-keyword">return false</span>;
+
+  <span class="code-comment">// Extract Target 1: int16 millimeters (Bit 15 = sign)</span>
+  int16_t rawX = (int16_t)(buf[<span class="code-num">4</span>] | (buf[<span class="code-num">5</span>] &lt;&lt; <span class="code-num">8</span>));
+  int16_t rawY = (int16_t)(buf[<span class="code-num">6</span>] | (buf[<span class="code-num">7</span>] &lt;&lt; <span class="code-num">8</span>));
+  tgt.x = rawX / <span class="code-num">1000.0f</span>;
+  tgt.y = rawY / <span class="code-num">1000.0f</span>;
+  <span class="code-keyword">return true</span>;
+}</code></pre>
+          </div>
+
+          <!-- Code Card 3 -->
+          <div class="glass" style="padding: 24px; border-radius: var(--radius-lg);">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+              <span class="text-mono" style="font-weight: 600; color: #FFF;">Nearest-Neighbor Association &amp; Fusion Loop</span>
+              <span class="badge badge-fused">100ms Task</span>
+            </div>
+            <pre class="code-card"><code><span class="code-keyword">void</span> <span class="code-func">vFusionTask</span>(<span class="code-keyword">void</span> *pvParameters) {
+  <span class="code-keyword">for</span> (;;) {
+    <span class="code-keyword">float</span> dx = tgt24.x - tgt60.x;
+    <span class="code-keyword">float</span> dy = tgt24.y - tgt60.y;
+    <span class="code-keyword">float</span> dist = <span class="code-func">sqrtf</span>(dx * dx + dy * dy);
+
+    <span class="code-keyword">if</span> (dist &lt;= <span class="code-num">0.50f</span>) {
+      <span class="code-comment">// Torso association locked: 99% confidence</span>
+      fused.x = <span class="code-num">0.45f</span> * tgt24.x + <span class="code-num">0.55f</span> * tgt60.x;
+      fused.y = <span class="code-num">0.50f</span> * tgt24.y + <span class="code-num">0.50f</span> * tgt60.y;
+      fused.conf = <span class="code-num">99.4f</span>;
+    }
+    vTaskDelay(<span class="code-func">pdMS_TO_TICKS</span>(<span class="code-num">100</span>));
+  }
+}</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <!-- Footer Nav -->
+      <div class="page-footer-nav">
+        <a href="simulation.html" class="footer-nav-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          <span>Prev: Simulation Lab</span>
+        </a>
+        <span class="text-mono" style="font-size: 0.8125rem; color: var(--text-tertiary);">PAGE 04 / 08 &bull; TECH</span>
+        <a href="working.html" class="footer-nav-btn">
+          <span>Next: Working &amp; Demo</span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+      </div>
+
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p style="font-size: 0.8125rem; color: var(--text-tertiary); margin: 0 auto;">
+          Dual mmWave Radar Fusion System &bull; Engineering College Capstone Project &bull; PlatformIO / ESP32
+        </p>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Shared Scripts -->
+  <script src="assets/js/core.js"></script>
+  <script src="assets/js/background.js"></script>
+  <script src="assets/js/nav.js"></script>
+  <script src="assets/js/reveal.js"></script>
+  <script src="assets/js/diagrams.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      if (window.RFO && window.RFO.initFMCWDiagram) {
+        window.RFO.initFMCWDiagram('fmcw-chirp-canvas');
+      }
+      if (window.RFO && window.RFO.initFusionStepper) {
+        window.RFO.initFusionStepper();
+      }
+      if (window.RFO && window.RFO.initKalmanFilterVisualizer) {
+        window.RFO.initKalmanFilterVisualizer('kalman-filter-canvas');
+      }
+    });
+  </script>
+</body>
+</html>
+
