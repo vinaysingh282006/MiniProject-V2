@@ -6,6 +6,7 @@ os.makedirs('screenshots', exist_ok=True)
 
 pages = [
     'index.html',
+    'practical.html',
     'ml.html',
     'simulation.html',
     'tech.html',
@@ -63,7 +64,7 @@ with sync_playwright() as p:
 
     browser.close()
     if all_clean:
-        print('\nVERIFICATION SUCCESS: All 8 pages passed with 0 console errors and 0 horizontal overflow!')
+        print('\nVERIFICATION SUCCESS: All 9 pages passed with 0 console errors and 0 horizontal overflow!')
     else:
         print('\nIssues were found that need addressing.')
 
